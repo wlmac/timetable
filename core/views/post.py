@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.syndication.views import Feed
 from django.core.paginator import EmptyPage, Paginator
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import DetailView
@@ -148,14 +149,16 @@ class AnnouncementTagList(TemplateView, mixins.TitleMixin):
     template_name = "core/announcement/tag_list.html"
 
     def get_title(self):
-        return "Announcements: " + models.Tag.objects.get(id=self.kwargs["tag"]).name
+        return (
+            "Announcements:" + get_object_or_404(models.Tag, id=self.kwargs["tag"]).name
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["feed_tag"] = models.Announcement.get_all(
             user=self.request.user
         ).filter(tags=context["tag"])
-        context["tag"] = models.Tag.objects.get(id=context["tag"])
+        context["tag"] = get_object_or_404(models.Tag, id=context["tag"])
         return context
 
 
@@ -283,12 +286,13 @@ class BlogPostTagList(TemplateView, mixins.TitleMixin):
     template_name = "core/blogpost/tag_list.html"
 
     def get_title(self):
-        return "Blogposts: " + models.Tag.objects.get(id=self.kwargs["tag"]).name
+        model = get_object_or_404(models.Tag, id=self.kwargs["tag"])
+        return "Blogposts: " + model.name
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["feed_tag"] = models.BlogPost.public().filter(tags=context["tag"])
-        context["tag"] = models.Tag.objects.get(id=context["tag"])
+        context["tag"] = get_object_or_404(models.Tag, id=context["tag"])
         return context
 
 
