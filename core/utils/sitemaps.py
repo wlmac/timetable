@@ -31,10 +31,3 @@ class ClubsSitemap(Sitemap):
 
     def items(self):
         return Organization.active()
-
-
-class FlatpagesSitemap(Sitemap):
-    priority = 1
-
-    def items(self):
-        return FlatPage.objects.all()

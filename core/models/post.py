@@ -328,7 +328,9 @@ class BlogPost(Post):
 
     @classmethod
     def public(cls):
-        return cls.objects.filter(is_published=True, is_archived=False)
+        return cls.objects.filter(
+            is_published=True, is_archived=False, show_after__lte=timezone.now()
+        )
 
     def get_absolute_url(self):
         return reverse("blogpost_detail", args=[self.slug])

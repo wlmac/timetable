@@ -1,3 +1,4 @@
+from django.contrib.flatpages.sitemaps import FlatPageSitemap
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
@@ -26,7 +27,7 @@ urlpatterns = [
                 "blog": BlogSitemap,
                 "announcements": AnnouncementsSitemap,
                 "clubs": ClubsSitemap,
-                "flatpages": FlatpagesSitemap,
+                # "flatpages": FlatPageSitemap
             }
         },
         name="django.contrib.sitemaps.sitemaps",
