@@ -13,11 +13,6 @@ from .views.tv import *
 from .views.user import *
 
 urlpatterns = [
-    path(
-        "martor/api/upload-image/",
-        MartorImageUpload.as_view(),
-        name="api_martor_image_upload",
-    ),
     path("", Index.as_view(), name="index"),
     path(
         "sitemap.xml",

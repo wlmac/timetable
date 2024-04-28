@@ -10,6 +10,11 @@ router = SimpleRouter()
 
 
 urlpatterns = [
+    path(
+        "upload-image/",
+        MartorImageUpload.as_view(),
+        name="api_martor_image_upload",
+    ),
     path("", include(router.urls)),
     path(
         "auth/token",
