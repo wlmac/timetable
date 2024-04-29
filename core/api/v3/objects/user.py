@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
     )
     organizations = UserOrganizationField()
     organizations_leading = UserOrganizationField()
+    organizations_supervising = UserOrganizationField()
 
     @staticmethod
     def get_gravatar_url(obj):
@@ -74,6 +75,7 @@ class UserSerializer(serializers.ModelSerializer):
             "graduating_year",
             "organizations",
             "organizations_leading",
+            "organizations_supervising",
             "tags_following",
             "gravatar_url",
             "saved_blogs",
