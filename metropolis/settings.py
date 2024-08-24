@@ -519,7 +519,7 @@ SIMPLE_JWT = {
 # Event calender Settings
 
 ICAL_PADDING = timedelta(days=4 * 7)  # iCalendar Feed
-
+SECRET_GCAL_ADDRESS = "Change me"
 
 # Qualified Trials
 QLTR: Dict[str, Dict] = {

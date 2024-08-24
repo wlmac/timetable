@@ -1,26 +1,31 @@
 """
-This script is used to.
+This script is used to add events from Google Calendar to the maclyonsden database.
+
+Instructions on how to get the SECRET_GCAL_ADDRESS:
+https://imgur.com/a/kC62n5p
+
 Code owned by Phil of metropolis backend team.
 """
 
 import requests
-from datetime import datetime
-from django.core.management.base import BaseCommand
-from django.db import IntegrityError
+import datetime
 
 from core.models import Event, Organization, Term
 
-# TODO: consider adding this to metropolis/settings.py in the "Event calender Settings" section (?)
-SECRET_CAL_ADDRESS = "Change me"
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 class Command(BaseCommand):
     help = "Imports events that that have not yet ended from Google Calendar. See https://github.com/wlmac/metropolis/issues/250"
 
     def handle(self, *args, **options):
-        if SECRET_CAL_ADDRESS == "Change me":
-            raise AssertionError("SECRET_CAL_ADDRESS is not set. Please change in metropolis/settings.py")
+        SECRET_GCAL_ADDRESS = settings.SECRET_GCAL_ADDRESS
 
-        response = requests.get(SECRET_CAL_ADDRESS)
+        if SECRET_GCAL_ADDRESS == "Change me":
+            raise AssertionError("SECRET_GCAL_ADDRESS is not set. Please change in metropolis/settings.py")
+
+        response = requests.get(SECRET_GCAL_ADDRESS)
 
         if response.status_code != 200:
             raise AssertionError(
@@ -53,10 +58,30 @@ class Command(BaseCommand):
 
                 # Because past events are not deleted from the .ics file, we don't
                 # add any events that have already passed to prevent duplication.
-                if datetime.now() > event_data["end_date"]:
+                if timezone.now() > event_data["end_date"]:
                     self.stdout.write(
                         self.style.ERROR(
                             f"\nEvent '{event_data["name"]}' skipped because it has already passed."
+                        )
+                    )
+                    continue
+
+                # Skip creating a duplicate event of one that already exists
+                if Event.objects.filter(
+                    name__iexact=event_data["name"],
+                    start_date=event_data["start_date"],
+                    end_date=event_data["end_date"],
+                ).exists():
+                    print(timezone.now())
+                    e = Event.objects.get(
+                        name__iexact=event_data["name"],
+                        start_date=event_data["start_date"],
+                        end_date=event_data["end_date"],
+                    )
+                    print(f"{e.start_date} {e.end_date}")
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"\nEvent '{event_data['name']}' skipped because it already exists."
                         )
                     )
                     continue
@@ -99,17 +124,21 @@ class Command(BaseCommand):
                 elif line.startswith("DTSTART"):
                     if line.startswith("DTSTART;VALUE=DATE:"):
                         start_date = line[len("DTSTART;VALUE=DATE:"):]
-                        event_data["start_date"] = datetime.strptime(start_date, "%Y%m%d")
+                        # gcalendar's all-day events aren't supported on the mld calendar so we hack it here and hope the people that are looking are in america/toronto
+                        event_data["start_date"] = timezone.make_aware(datetime.datetime.strptime(start_date, "%Y%m%d"), timezone.get_current_timezone())
                     elif line.startswith("DTSTART:"):
                         start_date = line[len("DTSTART:"):]
-                        event_data["start_date"] = datetime.strptime(start_date, "%Y%m%dT%H%M%SZ")
+                        event_data["start_date"] = timezone.make_aware(datetime.datetime.strptime(start_date, "%Y%m%dT%H%M%SZ"), datetime.timezone.utc)
                 elif line.startswith("DTEND"):
                     if line.startswith("DTEND;VALUE=DATE:"):
                         end_date = line[len("DTEND;VALUE=DATE:"):]
-                        event_data["end_date"] = datetime.strptime(end_date, "%Y%m%d")
+                        # gcalendar's all-day events aren't supported on the mld calendar so we hack it here and hope the people that are looking are in america/toronto
+                        event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%d"), timezone.get_current_timezone())
                     elif line.startswith("DTEND:"):
                         end_date = line[len("DTEND:"):]
-                        event_data["end_date"] = datetime.strptime(end_date, "%Y%m%dT%H%M%SZ")
+                        event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%SZ"), datetime.timezone.utc)
+
+        self.stdout.write(self.style.SUCCESS("Done."))
 
     def _get_yesno_response(self, question):
         while True:
