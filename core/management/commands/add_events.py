@@ -19,7 +19,25 @@ from django.utils import timezone
 class Command(BaseCommand):
     help = "Imports events that that have not yet ended from Google Calendar. See https://github.com/wlmac/metropolis/issues/250"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--term",
+            "-t",
+            type=str,
+            help="The name of the term globally assigned for all future events from the google calendar.",
+        )
+
     def handle(self, *args, **options):
+        term_override = None
+        if options["term"]:
+            try:
+                term_override = Term.objects.get(name__iexact=options["term"])
+                self.stdout.write(
+                    self.style.SUCCESS(f"Using term '{term_override}' for all upcoming events...")
+                )
+            except Term.DoesNotExist:
+                raise AssertionError(f"Term '{options["term"]}' does not exist. Did you make a typo?")
+        
         SECRET_GCAL_ADDRESS = settings.SECRET_GCAL_ADDRESS
 
         if SECRET_GCAL_ADDRESS == "Change me":
@@ -72,16 +90,9 @@ class Command(BaseCommand):
                     start_date=event_data["start_date"],
                     end_date=event_data["end_date"],
                 ).exists():
-                    print(timezone.now())
-                    e = Event.objects.get(
-                        name__iexact=event_data["name"],
-                        start_date=event_data["start_date"],
-                        end_date=event_data["end_date"],
-                    )
-                    print(f"{e.start_date} {e.end_date}")
                     self.stdout.write(
                         self.style.ERROR(
-                            f"\nEvent '{event_data['name']}' skipped because it already exists."
+                            f"\nEvent '{event_data["name"]}' skipped because it already exists."
                         )
                     )
                     continue
@@ -93,25 +104,14 @@ class Command(BaseCommand):
                 for key, value in event_data.items():
                     self.stdout.write(f"\t{key}: {value}\n")
 
-                event_data["term"] = self._get_term()
+                event_data["term"] = term_override if options["term"] else self._get_term()
                 event_data["organization"] = self._get_organization()
                 event_data["schedule_format"] = self._get_schedule_format()
 
                 for key in ["is_instructional", "is_public", "should_announce"]:
                     event_data[key] = self._get_boolean(key, event_data[key])
 
-                event = Event(
-                    name=event_data["name"],
-                    description=event_data["description"],
-                    start_date=event_data["start_date"],
-                    end_date=event_data["end_date"],
-                    term=event_data["term"],
-                    organization=event_data["organization"],
-                    schedule_format=event_data["schedule_format"],
-                    is_instructional=event_data["is_instructional"],
-                    is_public=event_data["is_public"],
-                    should_announce=event_data["should_announce"],
-                )
+                event = Event(**event_data)
                 event.save()
 
                 self.stdout.write(self.style.SUCCESS(f"\n\tEvent saved: {event}"))
