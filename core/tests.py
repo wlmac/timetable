@@ -1,7 +1,7 @@
-import os
+import datetime
 
+import pytz
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -108,3 +108,22 @@ class MetropolisBaseTests(TestCase):
         for case in cases:
             response = self.client.get(f'/api/v3/obj/{case["type"]}', **headers)
             self.assertEqual(response.status_code, 200)  # Added assertion
+
+
+class ChoicesTests(TestCase):
+    def setUp(self):
+        self.datetime = datetime.datetime(
+            2024, 8, 1, 0, 0, 0, 0, pytz.utc
+        )  # August 1, 2024
+        self.expected = [
+            (None, "Does not apply"),
+            (2025, 2025),
+            (2026, 2026),
+            (2027, 2027),
+            (2028, 2028),
+        ]
+
+    def test_calculate_graduating_year_choices(self):
+        from core.models.choices import calculate_graduating_year_choices
+
+        self.assertEqual(calculate_graduating_year_choices(), self.expected)
