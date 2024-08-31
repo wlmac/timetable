@@ -65,6 +65,9 @@ isort = "*"
 #[tool.mypy]
 #plugins = ["mypy_django_plugin.main"]
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.3"
+
 [tool.django-stubs]
 django_settings_module = "metropolis.settings"
 
