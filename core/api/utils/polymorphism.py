@@ -3,6 +3,7 @@ from __future__ import annotations
 from json import JSONDecodeError
 from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, Set
 
+from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.db.models import Model, Q
 from django.shortcuts import get_object_or_404
