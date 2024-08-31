@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django_select2",
     "pwa",
     "oauth2_provider",
+    "crispy_forms",
     "hijack",
     "hijack.contrib.admin",  # show a hijack button on admin.
     "drf_spectacular",
