@@ -21,7 +21,6 @@ class ViewSerializer(serializers.ModelSerializer):
 
 
 class MutateSerializer(serializers.ModelSerializer):
-
     def create(self, validated_data):
         validated_data["owner"] = self.context["request"].user
         if self.Meta.model.objects.filter(
@@ -68,7 +67,6 @@ class TimetableProvider(BaseProvider):
         if (
             request.user.is_anonymous
         ):  # it's up to the client to check if the user is logged in
-
             return Timetable.objects.none()
         # elif request.user.is_superuser:
         #     return Timetable.objects.all()

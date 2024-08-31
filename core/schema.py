@@ -193,7 +193,6 @@ class Api3ObjSpliter:
 
     @staticmethod
     def _get_name_from_id(operation_id: str) -> str:
-
         return operation_id.split("_")[-1]
 
     @staticmethod

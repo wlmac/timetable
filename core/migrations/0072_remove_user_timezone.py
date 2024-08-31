@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0071_user_deleted_at_user_is_deleted_alter_comment_author_and_more"),
     ]

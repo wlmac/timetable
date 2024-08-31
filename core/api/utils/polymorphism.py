@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from functools import lru_cache
 from json import JSONDecodeError
-from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Protocol, Set
+from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, Set
 
 from django.core.exceptions import BadRequest
 from django.db.models import Model, Q

@@ -10,3 +10,19 @@ from .tag import *
 from .term import *
 from .timetable import *
 from .user import *
+
+__all__ = [
+    "AnnouncementProvider",
+    "BlogPostProvider",
+    "CourseProvider",
+    "EventProvider",
+    "ExhibitProvider",
+    "OrganizationProvider",
+    "TagProvider",
+    "TermProvider",
+    "TimetableProvider",
+    "UserProvider",
+    "CommentProvider",
+    "LikeProvider",
+    "FlatPageProvider",
+]
