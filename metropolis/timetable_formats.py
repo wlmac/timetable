@@ -698,7 +698,7 @@ TIMETABLE_FORMATS = {  # possible formats for timetables, position is the classe
             ],
         },
     },
-    "2024-2026": {
+    "2024-2025": {
         "day_num_method": "calendar_days",
         "schedules": {
             "default": [
