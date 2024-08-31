@@ -6,6 +6,7 @@ SECRET_KEY = "change me!"
 DEBUG = True
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # to emails just get printed to the console.
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".ngrok.io", ".ngrok-free.app"]
+SECRET_GCAL_ADDRESS = "Change me"
 
 if DEBUG:
     import mimetypes
