@@ -160,6 +160,20 @@ class Term(models.Model):
     class MisconfiguredTermError(Exception):
         pass
 
+    def save(self, *args, **kwargs):
+        if self.start_date > self.end_date:
+            raise self.MisconfiguredTermError("Start date must be before end date")
+        
+        # check for overlapping terms
+        for term in Term.objects.all():
+            if term.start_date <= self.start_date < term.end_date:
+                raise self.MisconfiguredTermError("Current term's date range overlaps with existing term")
+
+            if term.start_date < self.end_date <= term.end_date:
+                raise self.MisconfiguredTermError("Current term's date range overlaps with existing term")
+
+        super().save(*args, **kwargs)
+
     @classmethod
     def get_current(cls, target_date=None):
         target_date = utils.get_localdate(date=target_date)
