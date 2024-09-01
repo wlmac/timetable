@@ -1,4 +1,6 @@
-TIMETABLE_FORMATS = {  # possible formats for timetables, position is the classes it can hold in day one and day two format.
+from typing import Final
+
+TIMETABLE_FORMATS: Final = {  # possible formats for timetables, position is the classes it can hold in day one and day two format.
     "pre-2020": {
         "schedules": {
             "default": [
