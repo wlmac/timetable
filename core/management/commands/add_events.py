@@ -16,6 +16,8 @@ from django.conf import local_settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from ....metropolis.timetable_formats import TIMETABLE_FORMATS
+
 class Command(BaseCommand):
     help = "Imports events that that have not yet ended from Google Calendar. See https://github.com/wlmac/metropolis/issues/250"
 
@@ -54,7 +56,7 @@ class Command(BaseCommand):
                     "end_date": None,
                     "term": None,
                     "organization": None,
-                    "schedule_format": "default",
+                    "schedule_format": TIMETABLE_FORMATS[-1]["schedules"][0],
                     "is_instructional": True,
                     "is_public": True,
                     "should_announce": False,
@@ -291,16 +293,8 @@ class Command(BaseCommand):
     def _get_schedule_format(self):
         schedule_format = "default"
         
-        if self._get_yesno_response(f"\n\tChange schedule format from its default value ({schedule_format})?"):
-            options = [
-                "early-dismissal",
-                "one-hour-lunch",
-                "early-early-dismissal",
-                "default",
-                "half-day",
-                "late-start",
-                "sac-election",
-            ]
+        if self._get_yesno_response(f"\n\tChange schedule format from its default value ({TIMETABLE_FORMATS[-1]["schedules"][0]})?"):
+            options = [TIMETABLE_FORMATS[-1]["schedules"]] # scuffed? yes, but it works
 
             self.stdout.write("\t------------------------")
             for i, option in enumerate(options):
