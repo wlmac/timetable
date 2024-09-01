@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ... import models
-from .. import serializers, utils
+from .. import serializers
+from ..utils.parse_date import parse_date_query_param
 
 
 class UserDetail(generics.RetrieveAPIView):
@@ -42,7 +43,7 @@ class UserMeSchedule(APIView):
     required_scopes = ["me_schedule"]
 
     def get(self, request, format=None):
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         return Response(request.user.schedule(target_date=date))
 
@@ -53,7 +54,7 @@ class UserMeScheduleWeek(APIView):
 
     @staticmethod
     def get(request, format=None):
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         return Response(
             {

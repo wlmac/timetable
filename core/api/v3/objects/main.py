@@ -10,7 +10,10 @@ from django.urls import NoReverseMatch, reverse
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics
 
-from core.api.utils import GenericAPIViewWithDebugInfo, GenericAPIViewWithLastModified
+from core.api.utils.last_modified import (
+    GenericAPIViewWithDebugInfo,
+    GenericAPIViewWithLastModified,
+)
 from core.api.utils.mixins import LookupField
 
 __all__ = ["ObjectList", "ObjectSingle", "ObjectRetrieve", "ObjectNew"]

@@ -16,7 +16,7 @@ from core.api.serializers.custom import (
     SupervisorField,
     TagRelatedField,
 )
-from core.api.utils import ModelAbilityField
+from core.api.utils.last_modified import ModelAbilityField
 from core.models import Announcement, User
 from core.utils.mail import send_mail
 

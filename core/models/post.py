@@ -110,7 +110,7 @@ class Comment(PostInteraction):
             raise ValidationError("A Comment cannot be a parent of itself.")
         return super().clean()
 
-    def get_children(self, su: Optional = False, all: Optional = False) -> QuerySet:
+    def get_children(self, su: Optional = False, all_: Optional = False) -> QuerySet:
         comments = Comment.objects.filter(parent=self)
         if su:
             filtered = [
@@ -120,9 +120,9 @@ class Comment(PostInteraction):
             filtered = [c.pk for c in comments if all([c.live, not c.deleted])]
 
         last = Comment.objects.filter(pk__in=filtered)
-        if all:
+        if all_:
             for comment in last:
-                last = last | comment.get_children(all=True)
+                last = last | comment.get_children(all_=True)
         return last
 
     def delete(self: Comment, using=None, keep_parents=False, **kwargs):

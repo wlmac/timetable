@@ -7,8 +7,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ... import models
-from .. import serializers, utils
-from ..utils import ListAPIViewWithFallback
+from .. import serializers
+from ..utils.fallback import ListAPIViewWithFallback
+from ..utils.parse_date import parse_date_query_param
 
 
 class IsOwner(permissions.BasePermission):
@@ -38,7 +39,7 @@ class TimetableSchedule(APIView):
         if request.user != timetable.owner:
             return Response({}, status=status.HTTP_403_FORBIDDEN)
 
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         return Response(timetable.day_schedule(target_date=date))
 
