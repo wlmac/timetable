@@ -680,7 +680,8 @@ class CommentAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     date_hierarchy = "created_at"
 
-    def likes(self, obj: Comment):
+    @staticmethod
+    def likes(obj: Comment):
         return obj.like_count
 
     def get_queryset(self, request):
