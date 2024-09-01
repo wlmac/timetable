@@ -6,7 +6,7 @@ from rest_framework import generics, serializers
 
 class GenericAPIViewWithLastModified:
     def get_last_modified(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def get(self, *args, **kwargs):
         resp = super().get(*args, **kwargs)

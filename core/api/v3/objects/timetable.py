@@ -1,7 +1,5 @@
-from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
-from django.utils import timezone
 from rest_framework import permissions, serializers
 
 from core.api.serializers.course import CourseSerializer, TermSerializer

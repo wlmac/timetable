@@ -14,7 +14,7 @@ from core.api.utils.polymorphism import (
     get_providers_by_operation,
     providers,
 )
-from core.api.v3.objects import BaseProvider
+from core.api.v3.objects.base import BaseProvider
 from core.utils.types import (
     ObjectModificationData,
     ProviderDetails,

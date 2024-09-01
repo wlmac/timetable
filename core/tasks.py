@@ -6,7 +6,7 @@ import requests
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.db.models import F, Field, JSONField, Q, Value
+from django.db.models import F, JSONField, Q, Value
 from django.db.models.functions.text import Concat
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _l

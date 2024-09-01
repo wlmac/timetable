@@ -10,12 +10,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Field
 from django.db.models import JSONField as DjangoJSONField
-from django.db.models.fields import PositiveIntegerRelDbTypeMixin, SmallIntegerField
+from django.db.models.fields import (  # noqa
+    PositiveIntegerRelDbTypeMixin,
+    SmallIntegerField,
+)
 from django.forms import DateField, DateInput
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
 

@@ -54,7 +54,7 @@ class Serializer(serializers.ModelSerializer):
             if obj.status not in ("d", "p"):
                 notify_supervisors = True
                 if obj.status != "a":
-                    obj.message = f"Successfully sent announcement for review."
+                    obj.message = "Successfully sent announcement for review."
             obj.status = "p" if obj.status != "d" else "d"
 
         if notify_supervisors:

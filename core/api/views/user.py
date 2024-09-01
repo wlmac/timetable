@@ -5,8 +5,6 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import User
-
 from ... import models
 from .. import serializers, utils
 
@@ -23,7 +21,8 @@ class UserMe(APIView):
     permission_classes = [permissions.IsAuthenticated | TokenHasScope]
     required_scopes = ["me_meta"]
 
-    def get(self, request, format=None):
+    @staticmethod
+    def get(request, format=None):
         serializer = serializers.UserSerializer(request.user)
         return Response(serializer.data)
 
@@ -32,7 +31,8 @@ class UserMeInternal(APIView):
     permission_classes = [TokenHasScope]
     required_scopes = ["me_meta", "internal"]
 
-    def get(self, request, format=None):
+    @staticmethod
+    def get(request, format=None):
         serializer = serializers.UserSerializerInternal(request.user)
         return Response(serializer.data)
 
@@ -51,7 +51,8 @@ class UserMeScheduleWeek(APIView):
     permission_classes = [permissions.IsAuthenticated | TokenHasScope]
     required_scopes = ["me_schedule"]
 
-    def get(self, request, format=None):
+    @staticmethod
+    def get(request, format=None):
         date = utils.parse_date_query_param(request)
 
         return Response(
@@ -68,7 +69,8 @@ class UserMeTimetable(APIView):
     permission_classes = [permissions.IsAuthenticated | TokenHasScope]
     required_scopes = ["me_timetable"]
 
-    def get(self, request, format=None):
+    @staticmethod
+    def get(request, format=None):
         current_timetable = request.user.get_current_timetable()
 
         if current_timetable is None:
