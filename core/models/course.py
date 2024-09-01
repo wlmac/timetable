@@ -166,6 +166,9 @@ class Term(models.Model):
         
         # check for overlapping terms
         for term in Term.objects.all():
+            if term.id == self.id:
+                continue
+            
             if term.start_date <= self.start_date < term.end_date:
                 raise self.MisconfiguredTermError("Current term's date range overlaps with existing term")
 

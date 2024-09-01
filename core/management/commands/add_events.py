@@ -12,11 +12,9 @@ import datetime
 
 from core.models import Event, Organization, Term
 
-from django.conf import local_settings
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-
-from ....metropolis.timetable_formats import TIMETABLE_FORMATS
 
 class Command(BaseCommand):
     help = "Imports events that that have not yet ended from Google Calendar. See https://github.com/wlmac/metropolis/issues/250"
@@ -30,7 +28,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        SECRET_GCAL_ADDRESS = local_settings.SECRET_GCAL_ADDRESS
+        term_override = self._get_term_from_args(options)
+
+        SECRET_GCAL_ADDRESS = settings.SECRET_GCAL_ADDRESS
 
         if SECRET_GCAL_ADDRESS == "Change me":
             raise AssertionError("SECRET_GCAL_ADDRESS is not set. Please change in metropolis/local_settings.py")
@@ -54,9 +54,9 @@ class Command(BaseCommand):
                     "description": "",
                     "start_date": None,
                     "end_date": None,
-                    "term": None,
+                    "term": options["term"] if options["term"] else None,
                     "organization": None,
-                    "schedule_format": TIMETABLE_FORMATS[-1]["schedules"][0],
+                    "schedule_format": "default",
                     "is_instructional": True,
                     "is_public": True,
                     "should_announce": False,
@@ -65,6 +65,8 @@ class Command(BaseCommand):
 
             elif line == "END:VEVENT":
                 in_event = False
+
+                event_data["term"] = term_override if term_override else self._get_term_from_date(event_data["start_date"], event_data["end_date"])
 
                 # Because past events are not deleted from the .ics file, we don't
                 # add any events that have already passed to prevent duplication.
@@ -89,32 +91,13 @@ class Command(BaseCommand):
                     )
                     continue
 
-                if options["term"]:
-                    event_data["term"] = self._get_term_from_args(options)
-                else:   
-                    try:
-                        event_data["term"] = Term.get_current(event_data["start_date"])
-                    except Term.DoesNotExist:
-                        try:
-                            event_data["term"] = Term.get_current(event_data["end_date"])
-
-                        except Term.DoesNotExist:
-                            self.stdout.write(
-                                self.style.ERROR(
-                                    f"\nNo term found for event '{event_data["name"]}' in its time range."
-                                )
-                            )
-
-                            self.stdout.write(
-                                f"\n\tPlease enter the name of the event's affiliated term (case insensitive, type 'skip' to skip the creation this event): ",
-                                ending="\n\t"
-                            )
-
-                            event_data["term"] = self._get_term_from_name()
-
-                            if not event_data["term"]:
-                                continue
-                            
+                if not event_data["term"]:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"\nEvent '{event_data['name']}' skipped because it has no term."
+                        )
+                    )
+                    continue
 
                 self.stdout.write(
                     self.style.SUCCESS(f"\nNew event created:")
@@ -123,8 +106,23 @@ class Command(BaseCommand):
                 for key, value in event_data.items():
                     self.stdout.write(f"\t{key}: {value}\n")
 
+                if Term.get_current(event_data["start_date"]) != event_data["term"]:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"\nEvent '{event_data['name']}' has a term that does not match the current term's date range."
+                        )
+                    )
+                
+                if not event_data["term"]:
+                    self.stdout.write(
+                        f"\n\tPlease enter the name of the event's affiliated term (case insensitive, type 'skip' to skip the creation this event): ",
+                        ending="\n\t"
+                    )
+
+                    event_data["term"] = self._get_term_from_name()
+                
                 event_data["organization"] = self._get_organization()
-                event_data["schedule_format"] = self._get_schedule_format()
+                event_data["schedule_format"] = self._get_schedule_format(event_data["term"])
 
                 for key in ["is_instructional", "is_public", "should_announce"]:
                     event_data[key] = self._get_boolean(key, event_data[key])
@@ -156,7 +154,7 @@ class Command(BaseCommand):
                         end_date = line[len("DTEND:"):]
                         event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%SZ"), datetime.timezone.utc)
 
-        self.stdout.write(self.style.SUCCESS("Done."))
+        self.stdout.write(self.style.SUCCESS("\nDone."))
 
     def _get_yesno_response(self, question):
         while True:
@@ -173,6 +171,15 @@ class Command(BaseCommand):
                     self.style.ERROR("Please enter 'y' or 'n' (leave blank for 'n')."),
                     ending="\n\t"
                 )
+
+    def _get_term_from_date(self, start_date, end_date):
+        try:
+            return Term.get_current(start_date)
+        except Term.DoesNotExist:
+            try:
+                return Term.get_current(end_date)
+            except Term.DoesNotExist:
+                return None
 
     def _get_term_from_args(self, options):
         if not options["term"]:
@@ -290,11 +297,14 @@ class Command(BaseCommand):
 
         return organization
 
-    def _get_schedule_format(self):
+    def _get_schedule_format(self, term):
         schedule_format = "default"
         
-        if self._get_yesno_response(f"\n\tChange schedule format from its default value ({TIMETABLE_FORMATS[-1]["schedules"][0]})?"):
-            options = [TIMETABLE_FORMATS[-1]["schedules"]] # scuffed? yes, but it works
+        if self._get_yesno_response(f"\n\tChange schedule format from its default value ('default')?"):
+            options = list(
+                settings.TIMETABLE_FORMATS[term.timetable_format]["schedules"]
+                    .keys()
+            )
 
             self.stdout.write("\t------------------------")
             for i, option in enumerate(options):
