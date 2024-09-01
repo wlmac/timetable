@@ -39,6 +39,7 @@ from .utils.actions import (
     set_post_unarchived,
     unapprove_comments,
 )
+from .utils.admin import generic_post_formfield_for_manytomany
 from .utils.announcements import request_announcement_approval
 from .utils.filters import (
     BlogPostAuthorListFilter,
@@ -426,17 +427,7 @@ class AnnouncementAdmin(PostAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
     def has_change_permission(self, request, obj=None):
         if (
@@ -510,17 +501,7 @@ class BlogPostAdmin(PostAdmin):
         return {"author": request.user.pk}
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
 
 class ExhibitAdmin(PostAdmin):
@@ -579,17 +560,7 @@ class EventAdmin(admin.ModelAdmin):
         return super().get_form(request, obj, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "organization":
