@@ -1,16 +1,40 @@
-from django.contrib.flatpages.sitemaps import FlatPageSitemap
+from django.conf import settings
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
-from .api.views import *
-from .utils.sitemaps import *
-from .views.index import *
-from .views.organization import *
-from .views.post import *
-from .views.raffle import *
-from .views.timetable import *
-from .views.tv import *
-from .views.user import *
+from .utils.sitemaps import AnnouncementsSitemap, BlogSitemap, ClubsSitemap
+from .views.index import (
+    AboutView,
+    CalendarFeed,
+    CalendarView,
+    Index,
+    Json,
+    Justinian,
+    MapView,
+    Teapot,
+)
+from .views.organization import OrganizationDetail, OrganizationList, OrganizationShort
+from .views.post import (
+    AnnouncementCards,
+    AnnouncementDetail,
+    AnnouncementFeed,
+    AnnouncementList,
+    AnnouncementTagList,
+    BlogPostCards,
+    BlogPostDetail,
+    BlogPostList,
+    BlogPostTagList,
+    ExhibitList,
+)
+from .views.raffle import RaffleRedirect
+from .views.timetable import (
+    CourseCreate,
+    TimetableCreate,
+    TimetableList,
+    TimetableUpdate,
+)
+from .views.tv import TVClubView, TVView
+from .views.user import Profile, ProfileRedirect, ProfileUpdate
 
 urlpatterns = [
     path("", Index.as_view(), name="index"),

@@ -1,12 +1,12 @@
 import django.db
-from django.contrib import messages
+from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
-from django.contrib.messages import constants as messages
 from django.db.models import Q
 from django.forms import Textarea
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -25,7 +25,22 @@ from .forms import (
     UserCreationForm,
 )
 from .models import Comment, StaffMember
-from .utils.actions import *
+from .utils.actions import (
+    approve_comments,
+    archive_page,
+    resend_approval_email,
+    reset_club_execs,
+    reset_club_president,
+    send_notif_singleday,
+    send_test_notif,
+    set_club_active,
+    set_club_unactive,
+    set_post_archived,
+    set_post_unarchived,
+    unapprove_comments,
+)
+from .utils.admin import generic_post_formfield_for_manytomany
+from .utils.announcements import request_announcement_approval
 from .utils.filters import (
     BlogPostAuthorListFilter,
     OrganizationListFilter,
@@ -58,7 +73,10 @@ class TermAdmin(admin.ModelAdmin):
     inlines = [
         CourseInline,
     ]
-    list_display = ["name", "timetable_format", "start_date", "end_date"]
+    list_display = ["name", "timetable_format", "start_date", "end_date", "is_frozen"]
+    list_filter = ["timetable_format", "is_frozen"]
+    ordering = ["is_frozen", "-start_date", "-end_date"]
+
     form = TermAdminForm
 
 
@@ -409,17 +427,7 @@ class AnnouncementAdmin(PostAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
     def has_change_permission(self, request, obj=None):
         if (
@@ -452,35 +460,14 @@ class AnnouncementAdmin(PostAdmin):
                     notify_supervisors = True
 
                     self.message_user(
-                        request, f"Successfully sent announcement for review."
+                        request, "Successfully sent announcement for review."
                     )
                 obj.status = "p" if obj.status != "d" else "d"
 
         super().save_model(request, obj, form, change)
 
         if notify_supervisors:
-            for teacher in obj.organization.supervisors.all():
-                email_template_context = {
-                    "teacher": teacher,
-                    "announcement": obj,
-                    "review_link": settings.SITE_URL
-                    + reverse("admin:core_announcement_change", args=(obj.pk,)),
-                }
-
-                send_mail(
-                    f"[ACTION REQUIRED] An announcement for {obj.organization.name} needs your approval.",
-                    render_to_string(
-                        "core/email/verify_announcement.txt",
-                        email_template_context,
-                    ),
-                    None,
-                    [teacher.email],
-                    bcc=settings.ANNOUNCEMENT_APPROVAL_BCC_LIST,
-                    html_message=render_to_string(
-                        "core/email/verify_announcement.html",
-                        email_template_context,
-                    ),
-                )
+            request_announcement_approval(obj)
 
 
 class BlogPostAdmin(PostAdmin):
@@ -514,17 +501,7 @@ class BlogPostAdmin(PostAdmin):
         return {"author": request.user.pk}
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
 
 class ExhibitAdmin(PostAdmin):
@@ -583,17 +560,7 @@ class EventAdmin(admin.ModelAdmin):
         return super().get_form(request, obj, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "tags":
-            kwargs["queryset"] = (
-                models.Tag.objects.filter(
-                    Q(organization=None) | Q(organization__execs=request.user)
-                )
-                .distinct()
-                .order_by("name")
-            )
-            if request.user.is_superuser:
-                kwargs["queryset"] = models.Tag.objects.all().order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return generic_post_formfield_for_manytomany(self, db_field, request, **kwargs)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "organization":
@@ -713,7 +680,8 @@ class CommentAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     date_hierarchy = "created_at"
 
-    def likes(self, obj: Comment):
+    @staticmethod
+    def likes(obj: Comment):
         return obj.like_count
 
     def get_queryset(self, request):

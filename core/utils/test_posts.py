@@ -1,8 +1,9 @@
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from django.utils import timezone
 
 from core.admin import User
-from core.models import Organization
-from core.models.post import *
+from core.models import Announcement, BlogPost, Comment, Organization, Post
 
 
 def create_school_org(user: User) -> Organization:

@@ -5,7 +5,7 @@ from rest_framework.parsers import JSONParser
 
 from ... import models
 from .. import serializers
-from ..utils import ListAPIViewWithFallback
+from ..utils.fallback import ListAPIViewWithFallback
 
 
 class EventsList(ListAPIViewWithFallback):

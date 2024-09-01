@@ -39,7 +39,7 @@ class AnnouncementCards(TemplateView):
         if not isinstance(self.page, str):
             return HttpResponseBadRequest("invalid page")
         if not self.page.isnumeric():
-            return HttpResponseBadRequest(f"invalid page (non-numeric)")
+            return HttpResponseBadRequest("invalid page (non-numeric)")
         self.feed = request.GET.get("feed", None)
         if self.feed == "my":
             if not self.request.user.is_authenticated:
@@ -208,7 +208,7 @@ class BlogPostCards(TemplateView):
         if not isinstance(self.page, str):
             return HttpResponseBadRequest("invalid page")
         if not self.page.isnumeric():
-            return HttpResponseBadRequest(f"invalid page (non-numeric)")
+            return HttpResponseBadRequest("invalid page (non-numeric)")
         self.feed = request.GET.get("feed", None)
         if self.feed == "my":
             if not self.request.user.is_authenticated:

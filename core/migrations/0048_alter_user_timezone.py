@@ -2,8 +2,6 @@
 
 from django.db import migrations, models
 
-import core.models.user
-
 
 class Migration(migrations.Migration):
     dependencies = [

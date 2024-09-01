@@ -2,9 +2,9 @@ import logging
 from functools import lru_cache
 
 from django.conf import settings
+from hijack import signals
 
 logger = logging.getLogger(__name__)
-from hijack import signals
 
 
 @lru_cache(maxsize=4096)

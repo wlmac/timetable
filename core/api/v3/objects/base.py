@@ -10,9 +10,7 @@ type SerializerItems = Dict[str, BaseSerializer]
 
 
 class BaseProvider(ABC, object):
-    allow_list: bool = (
-        True  # Is the view able to list the model's objects. (e.g. /user would list all users
-    )
+    allow_list: bool = True  # Is the view able to list the model's objects. (e.g. /user would list all users
     allow_new: bool = True  # Is the provider able to create a new object.
     kind: APIObjOperations  # type of view
     listing_filters_ignore: List[str] = []

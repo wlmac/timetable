@@ -1,7 +1,6 @@
-from django.contrib.flatpages.models import FlatPage
 from django.contrib.sitemaps import Sitemap
 
-from core.models import *
+from core.models import Announcement, BlogPost, Organization
 
 
 class BlogSitemap(Sitemap):

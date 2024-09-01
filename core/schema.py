@@ -14,7 +14,7 @@ from core.api.utils.polymorphism import (
     get_providers_by_operation,
     providers,
 )
-from core.api.v3.objects import BaseProvider
+from core.api.v3.objects.base import BaseProvider
 from core.utils.types import (
     ObjectModificationData,
     ProviderDetails,
@@ -193,7 +193,6 @@ class Api3ObjSpliter:
 
     @staticmethod
     def _get_name_from_id(operation_id: str) -> str:
-
         return operation_id.split("_")[-1]
 
     @staticmethod

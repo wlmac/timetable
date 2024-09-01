@@ -57,13 +57,16 @@ psycopg = [
     { extras = ["binary"], version = "~3.1", markers = "sys_platform != 'linux'" },
 ]
 gunicorn = "^22.0.0"
-sentry-sdk = { extras = ["django", "celery"], version = "^1.40.0" }
+sentry-sdk = { extras = ["django", "celery"], version = "^2.8.0" }
 #django-stubs = "*"
 black = "*"
 isort = "*"
 
 #[tool.mypy]
 #plugins = ["mypy_django_plugin.main"]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.3"
 
 [tool.django-stubs]
 django_settings_module = "metropolis.settings"

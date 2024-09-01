@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from functools import lru_cache
 from json import JSONDecodeError
-from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Protocol, Set
+from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, Set
 
+from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.db.models import Model, Q
 from django.shortcuts import get_object_or_404
@@ -11,7 +11,21 @@ from memoization import cached
 from rest_framework import generics
 from rest_framework.serializers import BaseSerializer
 
-from core.api.v3.objects import *
+from core.api.v3.objects import (
+    AnnouncementProvider,
+    BlogPostProvider,
+    CommentProvider,
+    CourseProvider,
+    EventProvider,
+    ExhibitProvider,
+    FlatPageProvider,
+    LikeProvider,
+    OrganizationProvider,
+    TagProvider,
+    TermProvider,
+    TimetableProvider,
+    UserProvider,
+)
 from core.api.v3.objects.base import BaseProvider
 from core.utils.types import APIObjOperations
 
@@ -60,23 +74,23 @@ def get_path_by_provider(provider: BaseProvider) -> str:
     ][0]
 
 
-providers: Dict[str, BaseProvider] = (
-    {  # k = request type (param passed in url), v = provider class
-        "announcement": AnnouncementProvider,
-        "blog-post": BlogPostProvider,
-        "exhibit": ExhibitProvider,
-        "event": EventProvider,
-        "organization": OrganizationProvider,
-        "flatpage": FlatPageProvider,
-        "user": UserProvider,
-        "tag": TagProvider,
-        "term": TermProvider,
-        "timetable": TimetableProvider,
-        "comment": CommentProvider,
-        "like": LikeProvider,
-        "course": CourseProvider,
-    }
-)
+providers: Dict[
+    str, BaseProvider
+] = {  # k = request type (param passed in url), v = provider class
+    "announcement": AnnouncementProvider,
+    "blog-post": BlogPostProvider,
+    "exhibit": ExhibitProvider,
+    "event": EventProvider,
+    "organization": OrganizationProvider,
+    "flatpage": FlatPageProvider,
+    "user": UserProvider,
+    "tag": TagProvider,
+    "term": TermProvider,
+    "timetable": TimetableProvider,
+    "comment": CommentProvider,
+    "like": LikeProvider,
+    "course": CourseProvider,
+}
 
 provider_keys = providers.keys()
 
@@ -113,7 +127,7 @@ def get_providers_by_operation(
     return [
         (prov if return_provider else key)
         for key, prov in providers.items()
-        if getattr(prov, f"allow_{operation}", True) == True
+        if getattr(prov, f"allow_{operation}", True)
     ]
 
 

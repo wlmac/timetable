@@ -1,3 +1,4 @@
+# ruff: noqa: F403
 from .announcement import *
 from .events import *
 from .feeds import *
