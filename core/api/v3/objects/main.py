@@ -95,7 +95,7 @@ class ObjectList(
 
     def __convert_type__(self, lookup_value: str, lookup_type: Callable) -> object:
         lookup_value = lookup_value.casefold()
-        if lookup_type == bool:
+        if lookup_type is bool:
             if lookup_value in self.FALSE_VALUES:
                 return False
             elif lookup_value in self.TRUE_VALUES:

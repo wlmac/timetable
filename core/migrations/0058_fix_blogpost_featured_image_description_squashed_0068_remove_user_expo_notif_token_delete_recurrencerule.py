@@ -16,7 +16,6 @@ def reset_description(apps, schema_editor):
 
 def delete_recurrencerule(apps, schema_editor):
     try:
-        RecurrenceRule = apps.get_model("core", "RecurrenceRule")
         DeleteModel("RecurrenceRule")
     except LookupError:
         pass

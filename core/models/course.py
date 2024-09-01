@@ -33,17 +33,6 @@ class Term(models.Model):
         target_date = utils.get_localdate(date=target_date)
         return self.start_date <= target_date < self.end_date
 
-    def get_current(self):
-        target_date = utils.get_localdate()
-        try:
-            return self.objects.get(
-                start_date__lte=target_date, end_date__gt=target_date
-            )
-        except self.DoesNotExist:
-            return None
-        except MultipleObjectsReturned:
-            raise self.MisconfiguredTermError
-
     def day_is_instructional(self, target_date=None):
         target_date = utils.get_localdate(date=target_date, time=[11, 0, 0])
         return (

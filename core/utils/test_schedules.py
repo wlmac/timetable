@@ -1,8 +1,11 @@
+import datetime
+
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
+from django.utils import timezone
 
 from ..models import Event, Organization, Term, Timetable, User
-from .get_schedule import *
+from . import get_week_schedule_info
 
 
 def create_current_term():

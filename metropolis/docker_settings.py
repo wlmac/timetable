@@ -34,7 +34,7 @@ DATABASES = {
 CELERY_BROKER_URL = "redis://redis:6379"
 
 try:
-    with open(os.path.join(os.path.dirname(__file__), "docker_local_settings.py")) as f:
+    with open(os.path.join(os.path.dirname(__file__), "docker_local_settings.py")) as f:  # noqa: F821
         exec(f.read(), globals())
 except IOError:
     raise TypeError(

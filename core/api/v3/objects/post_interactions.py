@@ -106,9 +106,9 @@ class CommentNewSerializer(CommentSerializer):
     author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     def create(self, validated_data) -> Comment:
-        contains_profanity: bool = bool(
-            # profanity_check.predict([validated_data["body"]])
-        )
+        # contains_profanity: bool = bool(
+        #      profanity_check.predict([validated_data["body"]])
+        # )
         com = Comment(**validated_data)
         if self.context[
             "request"

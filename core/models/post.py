@@ -299,7 +299,7 @@ class Announcement(Post):
     def approvable(self, user=None):
         if user is None:
             return False
-        return user in (org := self.organization).supervisors.all()
+        return self.organization.supervisors.filter(user=user).exists()
 
 
 def featured_image_file_path_generator(instance, file_name):

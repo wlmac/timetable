@@ -1,3 +1,4 @@
+# ruff: noqa: F403
 from .choices import *
 from .course import *
 from .organization import *
