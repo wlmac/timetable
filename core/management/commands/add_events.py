@@ -1,8 +1,12 @@
 """
 This script is used to add events from Google Calendar to the maclyonsden database.
 
-Instructions on how to get the SECRET_GCAL_ADDRESS:
-https://imgur.com/a/kC62n5p
+If you are getting an error related to the SECRET_GCAL_ADDRESS not being set correctly,
+first obtain the correct link by following the instructions below:
+https://web.archive.org/web/20240902165230/https://cdn.discordapp.com/attachments/1280208592712241285/1280208610848407714/instructions.png?ex=66d73ead&is=66d5ed2d&hm=8f1e5943cad6f4869d7d83737d5d171d8512b5a67b2b3818271a0e84e9e02125&
+
+After you have copied the link, go to metropolis/local_settings.py
+and add the link to the SECRET_GCAL_ADDRESS variable.
 
 Code owned by Phil of metropolis backend team.
 """
