@@ -203,8 +203,8 @@ class Command(BaseCommand):
                         event_data["description"] += line[1:].replace("\\r", "\r").replace("\\n", "\n")
                     
                     elif line.startswith("RRULE"):
-                        # TODO: parse rrule
-                        continue
+                        # TODO: might implement this in the future but this thing gave me a headache for way too long
+                        pass
 
                 except ValueError:
                     pass
@@ -214,6 +214,7 @@ class Command(BaseCommand):
 
 
         self.stdout.write(self.style.SUCCESS("\nDone."))
+        self.stdout.write(self.style.WARNING("\nPlease double check that all the events from google calendar were added correctly.\n"))
 
     def _get_yesno_response(self, question):
         while True:
