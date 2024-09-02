@@ -27,6 +27,20 @@ class Command(BaseCommand):
             help="The name of the term globally assigned for all future events from the google calendar.",
         )
 
+        parser.add_argument(
+            "--log-past-events",
+            "-P",
+            action="store_true",
+            help="Logs the names of past events that got skipped",
+        )
+
+        parser.add_argument(
+            "--log-duplicate-events",
+            "-D",
+            action="store_true",
+            help="Logs the names of duplicate events that got skipped",
+        )
+
     def handle(self, *args, **options):
         term_override = self._get_term_from_args(options)
 
@@ -71,11 +85,12 @@ class Command(BaseCommand):
                 # Because past events are not deleted from the .ics file, we don't
                 # add any events that have already passed to prevent duplication.
                 if timezone.now() > event_data["end_date"]:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"\nEvent '{event_data["name"]}' skipped because it has already passed."
+                    if options["log_past_events"]:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"\nEvent '{event_data["name"]}' skipped because it has already passed."
+                            )
                         )
-                    )
                     continue
 
                 # Skip creating a duplicate event of one that already exists
@@ -84,11 +99,12 @@ class Command(BaseCommand):
                     start_date=event_data["start_date"],
                     end_date=event_data["end_date"],
                 ).exists():
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"\nEvent '{event_data["name"]}' skipped because it already exists."
+                    if options["log_duplicate_events"]:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"\nEvent '{event_data["name"]}' skipped because it already exists."
+                            )
                         )
-                    )
                     continue
 
                 if not event_data["term"]:
