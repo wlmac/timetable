@@ -34,11 +34,6 @@ def blogpost_change(sender, **kwargs):
         tasks.notif_broker_blogpost.delay(kwargs["instance"].id)
 
 
-@receiver(signals.post_save, sender=models.BlogPost)
-def blogpost_change(sender, **kwargs):
-    global_notifs.send("blogpost_change", orig_sender=sender, kwargs=kwargs)
-
-
 class NotificationStream:
     def __init__(
         self,

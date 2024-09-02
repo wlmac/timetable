@@ -10,8 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ... import models
-from .. import serializers, utils
-from ..utils import GenericAPIViewWithLastModified, ListAPIViewWithFallback
+from .. import serializers
+from ..utils.fallback import ListAPIViewWithFallback
+from ..utils.last_modified import GenericAPIViewWithLastModified
+from ..utils.parse_date import parse_date_query_param
 
 
 class TermList(GenericAPIViewWithLastModified, ListAPIViewWithFallback):
@@ -42,7 +44,7 @@ class TermSchedule(APIView):
     @staticmethod
     def get(request, pk, fmt=None):
         term = get_object_or_404(models.Term, pk=pk)
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         return Response(term.day_schedule(target_date=date))
 
@@ -51,7 +53,7 @@ class TermScheduleWeek(APIView):
     @staticmethod
     def get(request, pk, fmt=None):
         term = get_object_or_404(models.Term, pk=pk)
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         return Response(
             {
@@ -79,7 +81,7 @@ class TermCurrentSchedule(APIView):
     @staticmethod
     def get(request, fmt=None):
         term = models.Term.get_current()
-        date = utils.parse_date_query_param(request)
+        date = parse_date_query_param(request)
 
         if term is None:
             return Response({}, status=status.HTTP_404_NOT_FOUND)

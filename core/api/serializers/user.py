@@ -50,7 +50,6 @@ class UserSerializerInternal(serializers.ModelSerializer):
         return gravatar_url(obj.email)
 
     class Meta:
-
         model = User
         fields = [
             "id",

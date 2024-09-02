@@ -30,13 +30,14 @@ class Index(TemplateView, mixins.TitleMixin):
         ]
 
         datetime_now = timezone.localtime()
-        events1 = (
-            lambda: models.Event.get_events(user=self.request.user)
-            .filter(
-                end_date__gte=datetime_now,
+
+        def events1():
+            return (
+                models.Event.get_events(user=self.request.user)
+                .filter(end_date__gte=datetime_now)
+                .order_by("start_date")
             )
-            .order_by("start_date")
-        )
+
         events = list(
             events1().filter(
                 ~Q(schedule_format="default"),

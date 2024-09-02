@@ -3,7 +3,7 @@ from rest_framework import permissions
 
 from ... import models
 from .. import serializers
-from ..utils import ListAPIViewWithFallback
+from ..utils.fallback import ListAPIViewWithFallback
 
 
 class AnnouncementListAll(ListAPIViewWithFallback):

@@ -4,7 +4,35 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .v3.objects.main import ObjectList, ObjectNew, ObjectRetrieve, ObjectSingle
 from .v3.views.user import UserDeleteView, UserRestoreView
-from .views import *
+from .views import (
+    AnnouncementListAll,
+    AnnouncementListMyFeed,
+    ApiOrganizationList,
+    APIVersion,
+    Banners,
+    EventsList,
+    Feeds,
+    MartorImageUpload,
+    NotificationsNew,
+    NotifToken,
+    OrganizationDetail,
+    TermCurrent,
+    TermCurrentSchedule,
+    TermDetail,
+    TermList,
+    TermSchedule,
+    TermScheduleWeek,
+    TimetableDetails,
+    TimetableList,
+    TimetableSchedule,
+    UserDetail,
+    UserMe,
+    UserMeInternal,
+    UserMeSchedule,
+    UserMeScheduleWeek,
+    UserMeTimetable,
+    staff,
+)
 
 router = SimpleRouter()
 

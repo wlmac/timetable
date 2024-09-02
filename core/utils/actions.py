@@ -1,37 +1,51 @@
 import datetime as dt
 import json
 
-from django.conf import settings
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as __
 from django.utils.translation import ngettext
 
 from core.models import Announcement, Organization, Post, User
 from core.tasks import notif_events_singleday, notif_single
-from core.utils.mail import send_mail
+from core.utils.announcements import request_announcement_approval
 from core.utils.ratelimiting import admin_action_rate_limit
+
+__all__ = [
+    "set_club_unactive",
+    "set_club_active",
+    "reset_club_president",
+    "reset_club_execs",
+    "set_post_archived",
+    "set_post_unarchived",
+    "resend_approval_email",
+    "send_test_notif",
+    "send_notif_singleday",
+    "archive_page",
+    "approve_comments",
+    "unapprove_comments",
+]
 
 
 # Clubs
 @admin.action(
-    permissions=["change"], description=_("Set the selected clubs to unactive")
+    permissions=["change"], description=__("Set the selected clubs to inactive")
 )
 def set_club_unactive(modeladmin, request, queryset: QuerySet[Organization]):
     queryset.update(is_active=False)
 
 
-@admin.action(permissions=["change"], description=_("Set the selected clubs to active"))
+@admin.action(
+    permissions=["change"], description=__("Set the selected clubs to active")
+)
 def set_club_active(modeladmin, request, queryset: QuerySet[Organization]):
     queryset.update(is_active=True)
 
 
 @admin.action(
     permissions=["change"],
-    description=_("Set selected club's president to a temp user."),
+    description=__("Set selected club's president to a temp user."),
 )
 def reset_club_president(modeladmin, request, queryset: QuerySet[Organization]):
     queryset.update(owner=User.objects.get(id=970))  # temp user, not a real person.
@@ -39,7 +53,7 @@ def reset_club_president(modeladmin, request, queryset: QuerySet[Organization]):
 
 @admin.action(
     permissions=["change"],
-    description=_("Remove all club execs."),
+    description=__("Remove all club execs."),
 )
 def reset_club_execs(modeladmin, request, queryset: QuerySet[Organization]):
     for club in queryset:
@@ -49,7 +63,7 @@ def reset_club_execs(modeladmin, request, queryset: QuerySet[Organization]):
 # Posts
 @admin.action(
     permissions=["change"],
-    description=_("Set the selected posts to archived (hidden from public)"),
+    description=__("Set the selected posts to archived (hidden from public)"),
 )
 def set_post_archived(modeladmin, request, queryset: QuerySet[Post]):
     queryset.update(is_archived=True)
@@ -57,7 +71,7 @@ def set_post_archived(modeladmin, request, queryset: QuerySet[Post]):
 
 @admin.action(
     permissions=["change"],
-    description=_("Set the selected posts to unarchived (visible to public)"),
+    description=__("Set the selected posts to unarchived (visible to public)"),
 )
 def set_post_unarchived(modeladmin, request, queryset: QuerySet[Post]):
     queryset.update(is_archived=False)
@@ -68,37 +82,16 @@ def set_post_unarchived(modeladmin, request, queryset: QuerySet[Post]):
 
 @admin.action(
     permissions=["view"],
-    description=_("resend the approval email for the selected announcements"),
+    description=__("resend the approval email for the selected announcements"),
 )
 @admin_action_rate_limit(rate_limit=2, time_period=60 * 60)
 def resend_approval_email(modeladmin, request, queryset: QuerySet[Announcement]):
     for post in queryset:
-        for teacher in post.organization.supervisors.all():
-            email_template_context = {
-                "teacher": teacher,
-                "announcement": post,
-                "review_link": settings.SITE_URL
-                + reverse("admin:core_announcement_change", args=(post.pk,)),
-            }
-
-            send_mail(
-                f"[ACTION REQUIRED] An announcement for {post.organization.name} needs your approval.",
-                render_to_string(
-                    "core/email/verify_announcement.txt",
-                    email_template_context,
-                ),
-                None,
-                [teacher.email],
-                bcc=settings.ANNOUNCEMENT_APPROVAL_BCC_LIST,
-                html_message=render_to_string(
-                    "core/email/verify_announcement.html",
-                    email_template_context,
-                ),
-            )
+        request_announcement_approval(post)
 
 
 # Users / Notifications
-@admin.action(permissions=["change"], description=_("Send test notification"))
+@admin.action(permissions=["change"], description=__("Send test notification"))
 def send_test_notif(modeladmin, request, queryset):
     for u in queryset:
         notif_single.delay(
@@ -111,7 +104,7 @@ def send_test_notif(modeladmin, request, queryset):
         )
 
 
-@admin.action(permissions=["change"], description=_("Send singleday notification"))
+@admin.action(permissions=["change"], description=__("Send singleday notification"))
 def send_notif_singleday(modeladmin, request, queryset):
     for _ in queryset:
         notif_events_singleday.delay(date=dt.date.today())
@@ -147,7 +140,7 @@ def archive_page(modeladmin, request, queryset):
 # Comments
 @admin.action(
     permissions=["change"],
-    description=_("Approve the selected comments for the main site."),
+    description=__("Approve the selected comments for the main site."),
 )
 def approve_comments(self, request, queryset):
     count = queryset.update(live=True)
@@ -164,7 +157,7 @@ def approve_comments(self, request, queryset):
 
 @admin.action(
     permissions=["change"],
-    description=_("Unapprove the selected comments for the main site."),
+    description=__("Unapprove the selected comments for the main site."),
 )
 def unapprove_comments(self, modeladmin, request, queryset):
     count = queryset.update(live=False)

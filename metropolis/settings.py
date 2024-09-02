@@ -8,7 +8,7 @@ from sentry_sdk.integrations import django as sen_django
 from sentry_sdk.integrations import logging as sen_logging
 from sentry_sdk.integrations import redis
 
-from metropolis.timetable_formats import *
+from metropolis.timetable_formats import TIMETABLE_FORMATS  # noqa: F401
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,7 +82,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "django.template.context_processors.request",
             ],
         },
     },
@@ -498,8 +497,6 @@ SITE_URL = "http://127.0.0.1:8000"
 TOS_URL = "/terms/"
 PRIVPOL_URL = "/privacy/"
 
-CRISPY_TEMPLATE_PACK = "bootstrap4"
-
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 HIJACK_PERMISSION_CHECK = "core.utils.hijack.hijack_permissions_check"
@@ -571,8 +568,8 @@ for banner in BANNER3:
 
 
 try:
-    from metropolis.config import *
-except ImportError as err:
+    from metropolis.config import *  # noqa: F403
+except ImportError:
     pass
 else:
     import warnings

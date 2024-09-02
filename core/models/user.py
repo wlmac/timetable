@@ -125,7 +125,7 @@ class User(AbstractUser):
         print("hiosas", email_template_context)
 
         send_mail(  # todo: frontend needs to make a page for this
-            f"[ACTION REQUIRED] Your account has been marked for deletion.",
+            "[ACTION REQUIRED] Your account has been marked for deletion.",
             render_to_string(
                 "core/email/user/deleted.txt",
                 email_template_context,
@@ -147,7 +147,7 @@ class User(AbstractUser):
         }
 
         send_mail(  # todo: frontend needs to make a page for this
-            f"Your account has successfully been restored.",
+            "Your account has successfully been restored.",
             render_to_string(
                 "core/email/user/restored.txt",
                 email_template_context,

@@ -1,6 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone  # noqa: F401
 
 import sentry_sdk
+
+# ruff: noqa: F821
 
 SECRET_KEY = "change me!"
 DEBUG = True

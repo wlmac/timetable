@@ -126,7 +126,7 @@ class TimetableSelectCoursesForm(forms.ModelForm):
         for i in courses:
             if i.position in position_set:
                 raise forms.ValidationError(
-                    f"There are two or more conflicting courses."
+                    "There are two or more conflicting courses."
                 )
             else:
                 position_set.add(i.position)
@@ -152,9 +152,9 @@ class AddCourseForm(forms.ModelForm):
 
         term_courses = self.term.courses.order_by("?")
         if term_courses:
-            self.fields["code"].widget.attrs[
-                "placeholder"
-            ] = f"Ex. {term_courses[0].code}"
+            self.fields["code"].widget.attrs["placeholder"] = (
+                f"Ex. {term_courses[0].code}"
+            )
 
         self.position_set = list(
             settings.TIMETABLE_FORMATS[self.term.timetable_format]["positions"]
