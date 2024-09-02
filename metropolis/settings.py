@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     "django_select2",
     "pwa",
     "oauth2_provider",
-    "crispy_forms",
     "hijack",
     "hijack.contrib.admin",  # show a hijack button on admin.
     "drf_spectacular",
@@ -83,7 +82,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "django.template.context_processors.request",
             ],
         },
     },
@@ -498,8 +496,6 @@ SITE_URL = "http://127.0.0.1:8000"
 
 TOS_URL = "/terms/"
 PRIVPOL_URL = "/privacy/"
-
-CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 

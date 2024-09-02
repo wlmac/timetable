@@ -17,4 +17,6 @@ def generic_post_formfield_for_manytomany(
         )
         if request.user.is_superuser:
             kwargs["queryset"] = Tag.objects.all().order_by("name")
-    return super(self).formfield_for_manytomany(db_field, request, **kwargs)
+    return super(self.__class__, self).formfield_for_manytomany(
+        db_field, request, **kwargs
+    )
