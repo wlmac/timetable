@@ -572,20 +572,6 @@ files = [
 Django = ">=3.2"
 
 [[package]]
-name = "django-crispy-forms"
-version = "2.3"
-description = "Best way to have Django DRY forms"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "django_crispy_forms-2.3-py3-none-any.whl", hash = "sha256:efc4c31e5202bbec6af70d383a35e12fc80ea769d464fb0e7fe21768bb138a20"},
-    {file = "django_crispy_forms-2.3.tar.gz", hash = "sha256:2db17ae08527201be1273f0df789e5f92819e23dd28fec69cffba7f3762e1a38"},
-]
-
-[package.dependencies]
-django = ">=4.2"
-
-[[package]]
 name = "django-hijack"
 version = "3.6.0"
 description = "Enable users to hijack (=login as) and work on behalf of another user."
@@ -1757,4 +1743,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "8b6a90417d511ae279fbee0ce2eb34b6d16dd473921263eb84fa4faa8d9fcc7e"
+content-hash = "9ee74824790e12c4044c45b7c3de5919f86e9c4306accbb0695f676180db0bfc"

@@ -30,7 +30,6 @@ Django = "^5.0.8"
 django-allauth = "~0.61"
 django-cors-headers = "^3.10.0"
 
-django-crispy-forms = "*"
 django-oauth-toolkit = "*"
 django-pwa = "*"
 django-redis = "^5.0.0"
