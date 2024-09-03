@@ -29,6 +29,9 @@ def announcement_change(sender, **kwargs):
 
 @receiver(signals.post_save, sender=models.BlogPost)
 def blogpost_change(sender, **kwargs):
+    if not kwargs["created"]:
+        return  # only send notifs on new blogposts
+
     global_notifs.send("blogpost_change", orig_sender=sender, kwargs=kwargs)
     if not settings.NOTIF_DRY_RUN:
         tasks.notif_broker_blogpost.delay(kwargs["instance"].id)
