@@ -550,6 +550,7 @@ NOTIF_EXPO_TIMEOUT_SECS = 3
 ANNOUNCEMENTS_NOTIFY_FEEDS = []  # list of PKs of organizations
 EVENTS_NOTIFY_FEEDS = []  # list of PKs of organizations
 NOTIF_DRY_RUN = True
+NOTIFICATIONS_ENABLED = False
 
 
 def is_aware(d: datetime) -> bool:

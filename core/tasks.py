@@ -96,6 +96,8 @@ def run_group_migrations():
 
 @app.task
 def notif_broker_announcement(obj_id):
+    if not settings.NOTIFICATIONS_ENABLED:
+        return
     logger.info(f"notif_broker_announcement for {obj_id}")
     try:
         ann = Announcement.objects.get(id=obj_id)
@@ -132,20 +134,23 @@ def notif_broker_blogpost(obj_id):
     except BlogPost.DoesNotExist:
         logger.warning(f"notif_broker_blogpost: blogpost {obj_id} does not exist")
         return
-    affected = users_with_token()
-    for u in affected.all():
-        notif_single.delay(
-            u.id,
-            dict(
-                title=_l("New Blog Post: %(title)s") % dict(title=post.title),
-                body=post.body,
-                category="blog",
-            ),
-        )
+    if settings.NOTIFICATIONS_ENABLED:
+        affected = users_with_token()
+        for u in affected.all():
+            notif_single.delay(
+                u.id,
+                dict(
+                    title=_l("New Blog Post: %(title)s") % dict(title=post.title),
+                    body=post.body,
+                    category="blog",
+                ),
+            )
 
 
 @app.task
 def notif_events_singleday(date: dt.date = None):
+    if not settings.NOTIFICATIONS_ENABLED:
+        return
     tz = pytz.timezone(settings.TIME_ZONE)
     if date is None:
         date = dt.date.today() + dt.timedelta(days=1)
@@ -190,6 +195,8 @@ def notif_events_singleday(date: dt.date = None):
 
 @app.task(bind=True)
 def notif_single(self, recipient_id: int, msg_kwargs):
+    if not settings.NOTIFICATIONS_ENABLED:
+        return
     recipient = User.objects.get(id=recipient_id)
     logger.info(
         f"notif_single to {recipient} ({recipient.expo_notif_tokens}): {msg_kwargs}"
