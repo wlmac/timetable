@@ -65,6 +65,7 @@ class Command(BaseCommand):
         event_data = {}
         in_event = False
         vevent_paragraph = ""
+        contains_rrule = False
 
         for line in response.text.splitlines():
             if line.startswith("BEGIN:VEVENT"):
@@ -137,6 +138,15 @@ class Command(BaseCommand):
                         )
                     continue
 
+                if contains_rrule:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            "Automatically recurring event (RRULE) detected in event. Reccurence rules are not supported by the script; you must create any future instances of this event manually."
+                        )
+                    )
+
+                    contains_rrule = False
+
                 self.stdout.write(
                     self.style.SUCCESS(f"\nNew event created:")
                 )
@@ -208,6 +218,7 @@ class Command(BaseCommand):
                     
                     elif line.startswith("RRULE"):
                         # TODO: might implement this in the future but this thing gave me a headache for way too long
+                        contains_rrule = True
                         pass
 
                 except ValueError:
