@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
             [gettext_noop('Start of 2nd Period'), 10.2],
             [gettext_noop('Start of Lunch'), 11.4],
             [gettext_noop('Start of 3rd Period'), 12.4],
-            [gettext_noop('Start of 4th Period'), 14]
+            [gettext_noop('Start of 4th Period'), 14],
+            [gettext_noop('End of School'), 15.15]
         ];
         DateTimeShortcuts.handleClockQuicklink = function (num, val) {
             let d;
