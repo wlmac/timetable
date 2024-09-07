@@ -517,7 +517,6 @@ SIMPLE_JWT = {
 
 ICAL_PADDING = timedelta(days=4 * 7)  # iCalendar Feed
 
-
 # Qualified Trials
 QLTR: Dict[str, Dict] = {
     "ia": dict(
