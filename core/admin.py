@@ -1,10 +1,11 @@
 import django.db
+from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
-from django.db.models import Q
+from django.db.models import Q, TimeField
 from django.forms import Textarea
 from django.urls import reverse
 from django.utils.html import format_html
@@ -49,8 +50,16 @@ from .utils.filters import (
 
 User = get_user_model()
 
-
 # Register your models here.
+
+
+class CustomTimeMixin:
+    formfield_overrides = {
+        TimeField: {"widget": forms.SplitDateTimeWidget},
+    }
+
+    class Media:
+        js = ("js/admin-custom-times.min.js",)
 
 
 class CourseInline(admin.TabularInline):
@@ -215,7 +224,7 @@ class PostAdmin(admin.ModelAdmin):
         abstract = True
 
 
-class AnnouncementAdmin(PostAdmin):
+class AnnouncementAdmin(CustomTimeMixin, PostAdmin):
     list_display = ["__str__", "organization", "status"]
     list_filter = [OrganizationListFilter, "status"]
     ordering = ["-show_after"]
@@ -538,7 +547,7 @@ class ExhibitAdmin(PostAdmin):
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
-class EventAdmin(admin.ModelAdmin):
+class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
     list_display = ["name", "organization", "start_date", "end_date"]
     list_filter = [OrganizationListFilter]
     ordering = ["-start_date", "-end_date"]
