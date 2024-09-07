@@ -603,19 +603,20 @@ icalendar = ">=4.0.3"
 
 [[package]]
 name = "django-oauth-toolkit"
-version = "3.0.0"
+version = "2.4.0"
 description = "OAuth2 Provider for Django"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "django_oauth_toolkit-3.0.0-py3-none-any.whl", hash = "sha256:67f86180215b1ddecb096955bf9766b5f8b9dd306be0b2fe8a50c865c989933a"},
-    {file = "django_oauth_toolkit-3.0.0.tar.gz", hash = "sha256:6639f26d01d18dc3ab500fed533df2698443564c7b37c7a0990f7e81c27e5bb4"},
+    {file = "django_oauth_toolkit-2.4.0-py3-none-any.whl", hash = "sha256:4931d6bf64b6aee32a42f989f218769d1876f3daa53c6bf883d8ab793fb302ee"},
+    {file = "django_oauth_toolkit-2.4.0.tar.gz", hash = "sha256:8975eaf697413a8d54208ee068bc5ad6d1ed76f1df84e4882fbb25e7e6966e1b"},
 ]
 
 [package.dependencies]
-django = ">=4.2"
-jwcrypto = ">=1.5.0"
-oauthlib = ">=3.2.2"
+django = ">=3.2,<4.0.0 || >4.0.0"
+jwcrypto = ">=0.8.0"
+oauthlib = ">=3.1.0"
+pytz = ">=2024.1"
 requests = ">=2.13.0"
 
 [[package]]
@@ -1737,4 +1738,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "10e0afe91aec3d75cc9b8bde7d1f08baaf64abbbe17a7b56b5155229d422151b"
+content-hash = "0f273f9f0bf3a575c749586276b6e37688f0c6127ec782a7883748f883daa06a"
