@@ -11,15 +11,16 @@ and add the link to the SECRET_GCAL_ADDRESS variable.
 Code owned by Phil of metropolis backend team.
 """
 
-import requests
 import datetime
 from zoneinfo import ZoneInfo
 
-from core.models import Event, Organization, Term
-
+import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
+from core.models import Event, Organization, Term
+
 
 class Command(BaseCommand):
     help = "Imports events that that have not yet ended from Google Calendar. See https://github.com/wlmac/metropolis/issues/250"
@@ -53,7 +54,9 @@ class Command(BaseCommand):
         SECRET_GCAL_ADDRESS = settings.SECRET_GCAL_ADDRESS
 
         if SECRET_GCAL_ADDRESS == "Change me":
-            raise AssertionError("SECRET_GCAL_ADDRESS is not set. Please change in metropolis/local_settings.py")
+            raise AssertionError(
+                "SECRET_GCAL_ADDRESS is not set. Please change in metropolis/local_settings.py"
+            )
 
         response = requests.get(SECRET_GCAL_ADDRESS)
 
@@ -86,7 +89,7 @@ class Command(BaseCommand):
 
             elif line.startswith("END:VEVENT"):
                 in_event = False
-                
+
                 if event_data["start_date"] is None:
                     self.stdout.write(
                         self.style.ERROR(
@@ -94,12 +97,10 @@ class Command(BaseCommand):
                         )
                     )
 
-                    self.stdout.write(
-                        f"Event raw data: \n{vevent_paragraph}"
-                    )
+                    self.stdout.write(f"Event raw data: \n{vevent_paragraph}")
 
                     self.stdout.write(
-                        f"Press 'Enter' to acknowledge that you will have to create the event manually"
+                        "Press 'Enter' to acknowledge that you will have to create the event manually"
                     )
 
                     input()
@@ -108,10 +109,18 @@ class Command(BaseCommand):
 
                 # Events that do not have a DTEND
                 if event_data["end_date"] is None:
-                    event_data["end_date"] = event_data["start_date"] + datetime.timedelta(minutes=1)
+                    event_data["end_date"] = event_data[
+                        "start_date"
+                    ] + datetime.timedelta(minutes=1)
 
                 # Uses cli argument if possible, otherwise use date from event
-                event_data["term"] = TERM_OVERRIDE if TERM_OVERRIDE is not None else self._get_term_from_date(event_data["start_date"], event_data["end_date"])
+                event_data["term"] = (
+                    TERM_OVERRIDE
+                    if TERM_OVERRIDE is not None
+                    else self._get_term_from_date(
+                        event_data["start_date"], event_data["end_date"]
+                    )
+                )
 
                 # Because past events are not deleted from the .ics file, we don't
                 # add any events that have already passed to prevent duplication.
@@ -147,9 +156,7 @@ class Command(BaseCommand):
 
                     contains_rrule = False
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"\nNew event created:")
-                )
+                self.stdout.write(self.style.SUCCESS("\nNew event created:"))
 
                 # Print known attributes of the event
                 for key, value in event_data.items():
@@ -161,17 +168,19 @@ class Command(BaseCommand):
                             f"\nEvent '{event_data['name']}' has a term that does not match the current term's date range."
                         )
                     )
-                
+
                 if event_data["term"] is None:
                     self.stdout.write(
-                        f"\n\tPlease enter the name of the event's affiliated term (case insensitive, type 'skip' to skip the creation this event): ",
-                        ending="\n\t"
+                        "\n\tPlease enter the name of the event's affiliated term (case insensitive, type 'skip' to skip the creation this event): ",
+                        ending="\n\t",
                     )
 
                     event_data["term"] = self._get_term_from_name(options)
-                
+
                 event_data["organization"] = self._get_organization()
-                event_data["schedule_format"] = self._get_schedule_format(event_data["term"])
+                event_data["schedule_format"] = self._get_schedule_format(
+                    event_data["term"]
+                )
 
                 for key in ["is_instructional", "is_public", "should_announce"]:
                     event_data[key] = self._get_boolean(key, event_data[key])
@@ -186,36 +195,64 @@ class Command(BaseCommand):
 
                 try:
                     if line.startswith("SUMMARY"):
-                        event_data["name"] = line[line.index(":")+1:]
+                        event_data["name"] = line[line.index(":") + 1 :]
 
                     elif line.startswith("DESCRIPTION"):
-                        event_data["description"] = line[line.index(":")+1:].replace("\\r", "\r").replace("\\n", "\n")
+                        event_data["description"] = (
+                            line[line.index(":") + 1 :]
+                            .replace("\\r", "\r")
+                            .replace("\\n", "\n")
+                        )
 
                     elif line.startswith("DTSTART"):
-                        start_date = line[line.index(":")+1:]
+                        start_date = line[line.index(":") + 1 :]
                         if "VALUE=DATE" in line:
                             # gcalendar's all-day events aren't supported on the mld calendar so we hack it here and hope the people that are looking are in america/toronto
-                            event_data["start_date"] = timezone.make_aware(datetime.datetime.strptime(start_date, "%Y%m%d"), timezone=ZoneInfo(TZID))
+                            event_data["start_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(start_date, "%Y%m%d"),
+                                timezone=ZoneInfo(TZID),
+                            )
                         elif "TZID" in line:
-                            TEMP_TZID = line[line.index("TZID=")+5:line.index(":")]
-                            event_data["start_date"] = timezone.make_aware(datetime.datetime.strptime(start_date, "%Y%m%dT%H%M%S"), timezone=ZoneInfo(TEMP_TZID))
+                            TEMP_TZID = line[line.index("TZID=") + 5 : line.index(":")]
+                            event_data["start_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(start_date, "%Y%m%dT%H%M%S"),
+                                timezone=ZoneInfo(TEMP_TZID),
+                            )
                         else:
-                            event_data["start_date"] = timezone.make_aware(datetime.datetime.strptime(start_date, "%Y%m%dT%H%M%SZ"), datetime.timezone.utc)
-                    
+                            event_data["start_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(
+                                    start_date, "%Y%m%dT%H%M%SZ"
+                                ),
+                                datetime.timezone.utc,
+                            )
+
                     elif line.startswith("DTEND"):
-                        end_date = line[line.index(":")+1:]
+                        end_date = line[line.index(":") + 1 :]
                         if "VALUE=DATE:" in line:
                             # gcalendar's all-day events aren't supported on the mld calendar so we hack it here and hope the people that are looking are in america/toronto
-                            event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%d"), timezone.get_current_timezone())
+                            event_data["end_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(end_date, "%Y%m%d"),
+                                timezone.get_current_timezone(),
+                            )
                         elif "TZID" in line:
-                            TEMP_TZID = line[line.index("TZID=")+5:line.index(":")]
-                            event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%S"), timezone=ZoneInfo(TEMP_TZID))
+                            TEMP_TZID = line[line.index("TZID=") + 5 : line.index(":")]
+                            event_data["end_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%S"),
+                                timezone=ZoneInfo(TEMP_TZID),
+                            )
                         else:
-                            event_data["end_date"] = timezone.make_aware(datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%SZ"), datetime.timezone.utc)
-                    
-                    elif line.startswith(" "): # to whoever decided to turn DESCRIPTION into a multiline field, i hope your coffee machine malfunctions often
-                        event_data["description"] += line[1:].replace("\\r", "\r").replace("\\n", "\n")
-                    
+                            event_data["end_date"] = timezone.make_aware(
+                                datetime.datetime.strptime(end_date, "%Y%m%dT%H%M%SZ"),
+                                datetime.timezone.utc,
+                            )
+
+                    elif line.startswith(
+                        " "
+                    ):  # to whoever decided to turn DESCRIPTION into a multiline field, i hope your coffee machine malfunctions often
+                        event_data["description"] += (
+                            line[1:].replace("\\r", "\r").replace("\\n", "\n")
+                        )
+
                     elif line.startswith("RRULE"):
                         # TODO: might implement this in the future but this thing gave me a headache for way too long
                         contains_rrule = True
@@ -223,13 +260,17 @@ class Command(BaseCommand):
 
                 except ValueError:
                     pass
-            
-            elif line.startswith("TZID"):
-                tzid = line[line.index(":")+1:]
 
+            elif line.startswith("TZID"):
+                pass
+                # tzid = line[line.index(":") + 1 :] # todo: do something with this?
 
         self.stdout.write(self.style.SUCCESS("\nDone."))
-        self.stdout.write(self.style.WARNING("\nPlease double check that all the events from google calendar were added correctly.\n"))
+        self.stdout.write(
+            self.style.WARNING(
+                "\nPlease double check that all the events from google calendar were added correctly.\n"
+            )
+        )
 
     def _get_yesno_response(self, question):
         while True:
@@ -244,7 +285,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(
                     self.style.ERROR("Please enter 'y' or 'n' (leave blank for 'n')."),
-                    ending="\n\t"
+                    ending="\n\t",
                 )
 
     def _get_term_from_date(self, start_date, end_date):
@@ -269,11 +310,15 @@ class Command(BaseCommand):
             return term
 
         except Term.DoesNotExist:
-            raise AssertionError(f"Term '{options["term"]}' does not exist. Did you make a typo?")
+            raise AssertionError(
+                f"Term '{options["term"]}' does not exist. Did you make a typo?"
+            )
 
         except Term.MultipleObjectsReturned:
             self.stdout.write(
-                self.style.WARNING("Multiple terms found. Please provide the term's id:"),
+                self.style.WARNING(
+                    "Multiple terms found. Please provide the term's id:"
+                ),
             )
 
             return self._get_term_from_id(options["term"])
@@ -288,21 +333,22 @@ class Command(BaseCommand):
             try:
                 term = Term.objects.get(name__iexact=term_name)
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"\tTerm found: {term}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"\tTerm found: {term}"))
                 return term
 
             except Term.DoesNotExist:
                 self.stdout.write(
                     self.style.ERROR(
                         "\tTerm not found. Did you make a typo? Please try again."
-                    ), ending="\n\t"
+                    ),
+                    ending="\n\t",
                 )
-            
+
             except Term.MultipleObjectsReturned:
                 self.stdout.write(
-                    self.style.WARNING("Multiple terms found. Please provide the term's id:"),
+                    self.style.WARNING(
+                        "Multiple terms found. Please provide the term's id:"
+                    ),
                 )
 
                 return self._get_term_from_id(term_name)
@@ -312,9 +358,9 @@ class Command(BaseCommand):
             self.stdout.write(f"\t{term.name} (id = {term.id}): ")
             for field in {"description", "start_date", "end_date", "timetable_format"}:
                 self.stdout.write(f"\t\t{field}: {getattr(term, field)}")
-            
+
         while True:
-            self.stdout.write(f"\n\tEnter the term's id: ", ending="")
+            self.stdout.write("\n\tEnter the term's id: ", ending="")
 
             term_id = input()
             try:
@@ -325,17 +371,19 @@ class Command(BaseCommand):
                 )
 
                 return term
-            
+
             except (Term.DoesNotExist, ValueError):
                 self.stdout.write(
-                    self.style.ERROR(f"\tTerm '{term_id}' does not exist. Please try again: "),
-                    ending="\n\t"
+                    self.style.ERROR(
+                        f"\tTerm '{term_id}' does not exist. Please try again: "
+                    ),
+                    ending="\n\t",
                 )
 
     def _get_organization(self):
         self.stdout.write(
-            f"\n\tPlease enter the name of the event's affiliated organization (case insensitive): ",
-            ending="\n\t"
+            "\n\tPlease enter the name of the event's affiliated organization (case insensitive): ",
+            ending="\n\t",
         )
         organization = None
 
@@ -345,20 +393,18 @@ class Command(BaseCommand):
                 organization = Organization.objects.get(name__iexact=organization_name)
 
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"\tOrganization found: {organization}"
-                    )
+                    self.style.SUCCESS(f"\tOrganization found: {organization}")
                 )
                 break
 
             except Organization.DoesNotExist:
                 try:
-                    organization = Organization.objects.get(slug__iexact=organization_name)
+                    organization = Organization.objects.get(
+                        slug__iexact=organization_name
+                    )
 
                     self.stdout.write(
-                        self.style.SUCCESS(
-                            f"\tOrganization found: {organization}"
-                        )
+                        self.style.SUCCESS(f"\tOrganization found: {organization}")
                     )
                     break
 
@@ -366,18 +412,20 @@ class Command(BaseCommand):
                     self.stdout.write(
                         self.style.ERROR(
                             "\tOrganization not found. Did you make a typo? Please try again."
-                        ), ending="\n\t"
+                        ),
+                        ending="\n\t",
                     )
 
         return organization
 
     def _get_schedule_format(self, term):
         schedule_format = "default"
-        
-        if self._get_yesno_response(f"\n\tChange schedule format from its default value ('default')?"):
+
+        if self._get_yesno_response(
+            "\n\tChange schedule format from its default value ('default')?"
+        ):
             options = list(
-                settings.TIMETABLE_FORMATS[term.timetable_format]["schedules"]
-                    .keys()
+                settings.TIMETABLE_FORMATS[term.timetable_format]["schedules"].keys()
             )
 
             self.stdout.write("\t------------------------")
@@ -395,9 +443,7 @@ class Command(BaseCommand):
                         schedule_format = options[int(i) - 1]
 
                         self.stdout.write(
-                            self.style.SUCCESS(
-                                f"\tNew value: {schedule_format}"
-                            )
+                            self.style.SUCCESS(f"\tNew value: {schedule_format}")
                         )
                         break
 
@@ -411,22 +457,17 @@ class Command(BaseCommand):
                         )
                     )
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"\tNo change")
-            )
-        
+            self.stdout.write(self.style.SUCCESS("\tNo change"))
+
         return schedule_format
 
     def _get_boolean(self, key, value):
-        if self._get_yesno_response(f"\n\tChange {key} from its default value ({value})?"):
-            self.stdout.write(
-                self.style.SUCCESS(f"\tNew value: {not value}")
-            )
+        if self._get_yesno_response(
+            f"\n\tChange {key} from its default value ({value})?"
+        ):
+            self.stdout.write(self.style.SUCCESS(f"\tNew value: {not value}"))
             return not value
 
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"\tNo change")
-            )
+            self.stdout.write(self.style.SUCCESS("\tNo change"))
             return value
-    

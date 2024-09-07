@@ -20,9 +20,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "sheets_link",
             type=str,
-            help=   "Link to Google Sheets (must be published as CSV). " \
-                    "Follow this guide (https://support.google.com/docs/answer/183965) to publish the spreadsheet, " \
-                    "set the dropbox to 'Comma-separated-values (.csv)' and copy the link underneath (https://web.archive.org/web/20240902165418/https://cdn.discordapp.com/attachments/1280208592712241285/1280209073949638717/publish_to_web.png?ex=66d73f1c&is=66d5ed9c&hm=616b70187f8f3a54885b050e5f80c606d275318382333e5819364e020ba421bb&)",
+            help="Link to Google Sheets (must be published as CSV). "
+            "Follow this guide (https://support.google.com/docs/answer/183965) to publish the spreadsheet, "
+            "set the dropbox to 'Comma-separated-values (.csv)' and copy the link underneath (https://web.archive.org/web/20240902165418/https://cdn.discordapp.com/attachments/1280208592712241285/1280209073949638717/publish_to_web.png?ex=66d73f1c&is=66d5ed9c&hm=616b70187f8f3a54885b050e5f80c606d275318382333e5819364e020ba421bb&)",
         )
 
     def handle(self, *args, **options):
@@ -60,8 +60,9 @@ class Command(BaseCommand):
             if organization_is_not_approved or has_duplicate_owner:
                 self.stdout.write(
                     self.style.ERROR(
-                        f"Skipping row in spreadsheet because the club has multiple owners\n" if has_duplicate_owner else \
-                        f"Skipping {row[0]} because it is not approved\n"
+                        "Skipping row in spreadsheet because the club has multiple owners\n"
+                        if has_duplicate_owner
+                        else f"Skipping {row[0]} because it is not approved\n"
                     )
                 )
                 continue
@@ -114,7 +115,9 @@ class Command(BaseCommand):
 
                 if skip_entry:
                     self.stdout.write(
-                        self.style.SUCCESS(f"\tSkipped creation of {organization_name}\n")
+                        self.style.SUCCESS(
+                            f"\tSkipped creation of {organization_name}\n"
+                        )
                     )
                     continue
             self.stdout.write(
