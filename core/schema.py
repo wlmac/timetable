@@ -215,11 +215,11 @@ class MetroSchemaGenerator(SchemaGenerator):
         for path, subpath, method, view in view_endpoints:
             if path.startswith("/api/v3/obj/") and "{type}" in path:
                 name = view.__class__.__name__.lstrip("Object").casefold()
-                print(f"Found path: {name}")
+                # print(f"Found path: {name}")
                 for provider in get_providers_by_operation(name, return_provider=True):
                     provider: BaseProvider
                     data = Api3ObjSpliter._get_data_from_provider(provider)  # noqa
-                    print(path.replace("{type}", get_path_by_provider(provider)))
+                    # print(path.replace("{type}", get_path_by_provider(provider)))
                     obj3.add(
                         ProviderDetails(
                             provider=provider,
@@ -236,7 +236,7 @@ class MetroSchemaGenerator(SchemaGenerator):
         formatted_obj3 = self._generate_endpoints(obj3)
 
         view_endpoints.extend(formatted_obj3)
-        print(f"View Endpoints: {formatted_obj3}")
+        # print(f"View Endpoints: {formatted_obj3}")
         return view_endpoints
 
     def _generate_endpoints(
