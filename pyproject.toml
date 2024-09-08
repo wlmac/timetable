@@ -1,11 +1,3 @@
-[tool.isort]
-profile = "black" # we use check for make fmt*
-skip_gitignore = true # no need to fmt ignored
-skip = "core/migrations" # no need to format migrations
-
-[tool.black]
-extend_exclude = "core/migrations/.*" # see tool.isort.skip
-
 [tool.poetry]
 name = "metropolis"
 version = "2.0"
@@ -29,7 +21,6 @@ defusedxml = "^0.7.1"
 Django = "^5.0.8"
 django-allauth = "~0.61"
 django-cors-headers = "^3.10.0"
-
 django-oauth-toolkit = "^3.0.1"
 django-pwa = "*"
 django-redis = "^5.0.0"
@@ -57,15 +48,22 @@ psycopg = [
 ]
 gunicorn = "^22.0.0"
 sentry-sdk = { extras = ["django", "celery"], version = "^2.8.0" }
-#django-stubs = "*"
-black = "*"
-isort = "*"
-
-#[tool.mypy]
-#plugins = ["mypy_django_plugin.main"]
 
 [tool.poetry.group.dev.dependencies]
+django-stubs = "*"
 ruff = "^0.6.3"
+isort = "*"
+
+[tool.ruff]
+exclude = [
+    "core/migrations",
+    ".gitignore"
+]
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
 
 [tool.django-stubs]
 django_settings_module = "metropolis.settings"
