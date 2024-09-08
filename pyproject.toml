@@ -30,7 +30,7 @@ Django = "^5.0.8"
 django-allauth = "~0.61"
 django-cors-headers = "^3.10.0"
 
-django-oauth-toolkit = "^2.4.0" # 3.0.0 Has a migration issue
+django-oauth-toolkit = "^3.0.1"
 django-pwa = "*"
 django-redis = "^5.0.0"
 django-select2 = "*"
