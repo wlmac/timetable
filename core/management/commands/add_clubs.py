@@ -1,7 +1,12 @@
 """
 This script is used to add organizations from a Google Sheets link. It is used to add organizations that are not already in the database.
 Code owned by Phil of metropolis backend team.
+
+Usage:
+    python manage.py add_clubs <google_sheets_link>
 """
+
+from __future__ import annotations
 
 import csv
 from io import StringIO
@@ -16,6 +21,16 @@ from core.models import Organization, User
 class Command(BaseCommand):
     help = "Adds organizations from Google Sheets. Does not modify existing organizations. See https://github.com/wlmac/metropolis/issues/247"
 
+    def error(self, *args, **kwargs):
+        self.stdout.write(
+            self.style.ERROR(*args, **kwargs),
+        )
+
+    def success(self, *args, **kwargs):
+        self.stdout.write(
+            self.style.SUCCESS(*args, **kwargs),
+        )
+
     def add_arguments(self, parser):
         parser.add_argument(
             "sheets_link",
@@ -23,6 +38,11 @@ class Command(BaseCommand):
             help="Link to Google Sheets (must be published as CSV). "
             "Follow this guide (https://support.google.com/docs/answer/183965) to publish the spreadsheet, "
             "set the dropbox to 'Comma-separated-values (.csv)' and copy the link underneath (https://web.archive.org/web/20240902165418/https://cdn.discordapp.com/attachments/1280208592712241285/1280209073949638717/publish_to_web.png?ex=66d73f1c&is=66d5ed9c&hm=616b70187f8f3a54885b050e5f80c606d275318382333e5819364e020ba421bb&)",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Don't actually add the organizations to the database",
         )
 
     def handle(self, *args, **options):
@@ -55,100 +75,108 @@ class Command(BaseCommand):
 
         for row in csv_reader:
             organization_is_not_approved = row[1] != "TRUE"
+            print(row)
             has_duplicate_owner = len(row[0]) == 0
-
-            if organization_is_not_approved or has_duplicate_owner:
-                self.stdout.write(
-                    self.style.ERROR(
-                        "Skipping row in spreadsheet because the club has multiple owners\n"
-                        if has_duplicate_owner
-                        else f"Skipping {row[0]} because it is not approved\n"
-                    )
-                )
+            if organization_is_not_approved:
+                self.error(f"Skipping {row[0]} because it is not approved\n")
+                continue
+            elif has_duplicate_owner:
+                self.error(f"Skipping {row[0]} as it's a duplicate owner\n")
                 continue
 
-            self.stdout.write(f"New organization: {row[0]}")
+            self.success(f"New organization: {row[0]}")
             (
                 organization_name,
                 _,
                 _,
                 owner_name,
                 owner_email,
-                _,
-                _,
+                staff_name,
+                staff_email,
                 _,
                 time_and_place,
                 social_links,
             ) = row
 
-            owner_user = None
+            club_owner = self.get_user_by_email(owner_name, owner_email)
+            if club_owner == "skipped":  # prevent a repeat of the same error message
+                continue
+
+            supervisor_user = self.get_user_by_email(staff_name, staff_email)
+
+            user_statuses = ""
+
+            if club_owner == "skipped":
+                user_statuses += "owner"
+            elif supervisor_user == "skipped":
+                user_statuses += "supervisor"
+
+            if user_statuses != "":
+                self.error(
+                    f"Skipping {organization_name} as {user_statuses} is not found\n"
+                )
+                continue
+
             try:
-                owner_user = User.objects.get(email=owner_email)
-            except User.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"\t{owner_name}'s email not found! Are you sure they registered a metro account with this email?"
-                    )
+                # Consider updating the google sheets table so we can automatically fill out bio and slug and stuff - NOTE: (json) Planned by Crystal for the upcoming 25-26 school year.
+                defaults = (
+                    {
+                        "owner": club_owner,
+                        "name": organization_name,
+                        "extra_content": time_and_place + "\n\n" + social_links,
+                        "show_members": True,
+                        "is_active": True,
+                        "is_open": False,
+                    },
                 )
-
-                skip_entry = False
-                self.stdout.write(
-                    "\tIf you have the correct email, please enter it here (type 'skip' to skip this entry):"
-                )
-                while True:
-                    try:
-                        print("\t", end="")
-                        owner_email = input()
-                        owner_user = User.objects.get(email=owner_email)
-                        break
-                    except User.DoesNotExist:
-                        if owner_email == "skip":
-                            skip_entry = True
-                            break
-
-                        self.stdout.write(
-                            self.style.ERROR(
-                                "\tUser not found. Did you make a typo? (type 'skip' to skip this entry)"
-                            )
-                        )
-                        self.stdout.write("\tPlease re-enter email:")
-
-                if skip_entry:
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"\tSkipped creation of {organization_name}\n"
-                        )
+                if not options["dry_run"]:
+                    club, created = Organization.objects.update_or_create(
+                        slug="".join(
+                            c.casefold() if c.isalnum() else "-"
+                            for c in organization_name
+                        ).lower(),
+                        defaults=defaults,
+                        create_defaults={
+                            **defaults,
+                            "bio": "A WLMAC organization",
+                        },
                     )
-                    continue
-            self.stdout.write(
-                self.style.SUCCESS(f"\tFound a match for {owner_name}'s email")
+                    club.execs.add(club_owner)
+                    club.supervisors.add(supervisor_user)
+
+                    status = "added" if created else "updated"
+                else:
+                    status = "(dry-run | would have added)"
+                self.success(
+                    f"\tSuccessfully {status} {organization_name} organization, owned by {owner_name}"
+                )
+            except IntegrityError as IE:
+                self.error(IE.__traceback__)
+            self.stdout.write()
+
+    type Status = "skipped"  # noqa: F821
+
+    def get_user_by_email(self, name: str, email: str) -> User | Status:
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            self.error(
+                f"\t{name}'s email ({email}) not found! Are you sure they registered a metro account with this email?"
             )
 
-            try:
-                # Consider using get_or_create() if it happens to be more useful?
-                # Also, consider updating the google sheets table so we can automatically fill out bio and slug and stuff
-                club = Organization(
-                    owner=owner_user,
-                    name=organization_name,
-                    bio="A WLMAC organization",
-                    extra_content=time_and_place + "\n\n" + social_links,
-                    slug="".join(
-                        c.casefold() if c.isalnum() else "-" for c in organization_name
-                    ).lower(),
-                    show_members=True,
-                    is_active=True,
-                    is_open=False,
-                )
-                club.save()
-                club.execs.add(owner_user)
-
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"\tSuccessfully added {organization_name} organization, owned by {owner_name}"
+            self.stdout.write(
+                "\tIf you have the correct email, please enter it here (type 'skip' to skip this entry):"
+            )
+            while True:
+                try:
+                    print("\t", end="")
+                    email = input().casefold()
+                    return User.objects.get(email=email)
+                except User.DoesNotExist:
+                    if email == "skip":
+                        return "skipped"
+                    self.error(
+                        "\tUser not found. Did you make a typo? (type 'skip' to skip this entry)"
                     )
-                )
-            except IntegrityError:
-                self.stdout.write(
-                    self.style.ERROR("\tDuplicate slug detected. Skipping...")
-                )
-            self.stdout.write()
+
+                    self.stdout.write("\tPlease re-enter email:")

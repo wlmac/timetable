@@ -567,21 +567,14 @@ def check_banner3(banner: Dict) -> None:
 for banner in BANNER3:
     check_banner3(banner)
 
-
 try:
-    from metropolis.config import *  # noqa: F403
-except ImportError:
-    pass
-else:
-    import warnings
-
-    warnings.warn(DeprecationWarning("use local_settings.py instead of config.py"))
-
-try:
-    with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
+    with open(os.path.join(os.path.dirname(__file__), "./local_settings.py")) as f:
         exec(f.read(), globals())
 except IOError:
-    pass
+    os.listdir(os.path.dirname(__file__))
+    raise FileNotFoundError(
+        "local_settings.py not found, please consult docs for setup instructions"
+    )
 
 if SECRET_KEY == "Change me":
     raise TypeError("override SECRET_KEY")

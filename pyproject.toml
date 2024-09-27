@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "metropolis"
-version = "2.0"
+version = "2.3"
 description = "William Lyon Mackenzie's online hub for announcements, calendar events, clubs, and timetables"
 license = "AGPLv3"
 authors = ["nyiyui <+@nyiyui.ca>", "Jason Cameron <jason@jasoncameron.dev>"]
