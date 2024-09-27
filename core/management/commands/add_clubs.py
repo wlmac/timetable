@@ -116,8 +116,8 @@ class Command(BaseCommand):
 
             try:
                 # Consider updating the google sheets table so we can automatically fill out bio and slug and stuff - NOTE: (json) Planned by Crystal for the upcoming 25-26 school year.
-                defaults = (
-                    {
+                # fmt: off
+                defaults = {
                         "owner": club_owner,
                         "name": organization_name,
                         "extra_content": time_and_place + "\n\n" + social_links,
@@ -125,7 +125,8 @@ class Command(BaseCommand):
                         "is_active": True,
                         "is_open": False,
                     },
-                )
+                # fmt: on
+
                 if not options["dry_run"]:
                     club, created = Organization.objects.update_or_create(
                         slug="".join(
