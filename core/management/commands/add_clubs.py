@@ -47,9 +47,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         sheets_url = str(options["sheets_link"])
-        print(sheets_url)
         if not ("output=csv" in sheets_url or sheets_url.endswith(".csv")):
-            print(sheets_url.endswith("?output=csv"))
             raise AssertionError(
                 "Make sure to make a copy of the club spreadsheet and use the link provided when publishing as .csv file (https://support.google.com/docs/answer/183965)"
             )
@@ -75,7 +73,6 @@ class Command(BaseCommand):
 
         for row in csv_reader:
             organization_is_not_approved = row[1] != "TRUE"
-            print(row)
             has_duplicate_owner = len(row[0]) == 0
             if organization_is_not_approved:
                 self.error(f"Skipping {row[0]} because it is not approved\n")
