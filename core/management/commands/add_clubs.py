@@ -87,6 +87,7 @@ class Command(BaseCommand):
                 continue
 
             self.success(f"New organization: {row[0]}")
+            row = [token.strip() for token in row]
             (
                 organization_name,
                 _,
@@ -166,7 +167,7 @@ class Command(BaseCommand):
 
     def get_user_by_email(self, name: str, email: str) -> User | Status:
         try:
-            return User.objects.get(email=email)
+            return User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             self.error(
                 f"\t{name}'s email ({email}) not found! Are you sure they registered a metro account with this email?"
