@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 from io import StringIO
+import re
 
 import requests
 from django.core.management.base import BaseCommand
@@ -87,6 +88,7 @@ class Command(BaseCommand):
                 continue
 
             self.success(f"New organization: {row[0]}")
+            row = [token.strip() for token in row]
             (
                 organization_name,
                 _,
@@ -132,10 +134,8 @@ class Command(BaseCommand):
                     } # this singular comma gave me a run for my money. i have lost my family, my wealth, my sanity, and my soul from the inclusion of this character. 
                 # fmt: on
                 
-                slug="".join(
-                            c.casefold() if c.isalnum() else "-"
-                            for c in organization_name
-                        ).lower()
+                # remove all non-alphanumeric or whitespace characters (a-z, A-Z, 0-9, space) and then replace spaces with dashes
+                slug = re.sub(r"[^a-zA-Z0-9\s]", "", organization_name.strip().casefold()).replace(" ", "-")
 
                 if not Organization.objects.filter(slug=slug).exists():
                     slug = self.get_corrected_slug_or_not(organization_name, slug)
@@ -166,7 +166,7 @@ class Command(BaseCommand):
 
     def get_user_by_email(self, name: str, email: str) -> User | Status:
         try:
-            return User.objects.get(email=email)
+            return User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             self.error(
                 f"\t{name}'s email ({email}) not found! Are you sure they registered a metro account with this email?"
