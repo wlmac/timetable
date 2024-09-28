@@ -31,6 +31,11 @@ class Command(BaseCommand):
             self.style.SUCCESS(*args, **kwargs),
         )
 
+    def warn(self, *args, **kwargs):
+        self.stdout.write(
+            self.style.WARNING(*args, **kwargs),
+        )
+
     def add_arguments(self, parser):
         parser.add_argument(
             "sheets_link",
@@ -74,11 +79,11 @@ class Command(BaseCommand):
         for row in csv_reader:
             organization_is_not_approved = row[1] != "TRUE"
             has_duplicate_owner = len(row[0]) == 0
-            if organization_is_not_approved:
-                self.error(f"Skipping {row[0]} because it is not approved\n")
+            if has_duplicate_owner:
+                # self.error(f"Skipping a row because it is a duplicate owner of the previously added club\n") # logging this is probably not necessary
                 continue
-            elif has_duplicate_owner:
-                self.error(f"Skipping {row[0]} as it's a duplicate owner\n")
+            elif organization_is_not_approved:
+                self.error(f"Skipping {row[0]} because it is not approved\n")
                 continue
 
             self.success(f"New organization: {row[0]}")
@@ -124,15 +129,20 @@ class Command(BaseCommand):
                         "show_members": True,
                         "is_active": True,
                         "is_open": False,
-                    },
+                    } # this singular comma gave me a run for my money. i have lost my family, my wealth, my sanity, and my soul from the inclusion of this character. 
                 # fmt: on
+                
+                slug="".join(
+                            c.casefold() if c.isalnum() else "-"
+                            for c in organization_name
+                        ).lower()
+
+                if not Organization.objects.filter(slug=slug).exists():
+                    slug = self.get_corrected_slug_or_not(organization_name, slug)
 
                 if not options["dry_run"]:
                     club, created = Organization.objects.update_or_create(
-                        slug="".join(
-                            c.casefold() if c.isalnum() else "-"
-                            for c in organization_name
-                        ).lower(),
+                        slug=slug,
                         defaults=defaults,
                         create_defaults={
                             **defaults,
@@ -146,7 +156,7 @@ class Command(BaseCommand):
                 else:
                     status = "(dry-run | would have added)"
                 self.success(
-                    f"\tSuccessfully {status} {organization_name} organization, owned by {owner_name}"
+                    f"\tSuccessfully {status} '{organization_name}' organization (slug={slug}), owned by {owner_name}"
                 )
             except IntegrityError as IE:
                 self.error(IE.__traceback__)
@@ -178,3 +188,22 @@ class Command(BaseCommand):
                     )
 
                     self.stdout.write("\tPlease re-enter email:")
+
+    def get_corrected_slug_or_not(self, organization_name: str, slug: str) -> str:
+        self.warn(
+            f"\tCould not find '{organization_name}' with the slug '{slug}'. Please enter the correct slug if the organization exists or leave blank to create club"
+        )
+
+        while True:
+            print("\t", end="")
+            new_slug = input()
+
+            if new_slug == "":
+                return slug
+            elif Organization.objects.filter(slug=new_slug).exists():
+                return new_slug
+            else:
+                self.error(
+                    f"\tCould not find an organization with the slug '{new_slug}'. Please try again or leave blank to create a club."
+                )
+    
