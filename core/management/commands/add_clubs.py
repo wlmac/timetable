@@ -77,6 +77,7 @@ class Command(BaseCommand):
             expected_header == next(csv_reader)
         ), "Google Sheets layout changed since the last time the script was updated, please consult the backend team."
 
+        skipped_orgs = []
         for row in csv_reader:
             organization_is_not_approved = row[1] != "TRUE"
             has_duplicate_owner = len(row[0]) == 0
@@ -87,7 +88,7 @@ class Command(BaseCommand):
                 self.error(f"Skipping {row[0]} because it is not approved\n")
                 continue
 
-            self.success(f"New organization: {row[0]}")
+            self.success(f"\nNew organization: {row[0]}")
             row = [token.strip() for token in row]
             (
                 organization_name,
@@ -104,6 +105,7 @@ class Command(BaseCommand):
 
             club_owner = self.get_user_by_email(owner_name, owner_email)
             if club_owner == "skipped":  # prevent a repeat of the same error message
+                skipped_orgs.append(organization_name)
                 continue
 
             supervisor_user = self.get_user_by_email(staff_name, staff_email)
@@ -119,6 +121,7 @@ class Command(BaseCommand):
                 self.error(
                     f"Skipping {organization_name} as {user_statuses} is not found\n"
                 )
+                skipped_orgs.append(organization_name)
                 continue
 
             try:
@@ -161,6 +164,11 @@ class Command(BaseCommand):
             except IntegrityError as IE:
                 self.error(IE.__traceback__)
             self.stdout.write()
+        
+        self.warn(
+            f"Skipped {len(skipped_orgs)} organizations: \n\t{'\n\t'.join(skipped_orgs)}"
+        )
+        self.success("Done!")
 
     type Status = "skipped"  # noqa: F821
 
