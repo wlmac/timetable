@@ -290,5 +290,5 @@ class UserAdminForm(CaseInsensitiveUsernameMixin, ContribUserChangeForm):
     expo_notif_tokens = forms.JSONField(required=False)
 
 
-class UserCreationForm(CaseInsensitiveUsernameMixin, ContribAdminUserCreationForm):
+class UserCreationAdminForm(CaseInsensitiveUsernameMixin, ContribAdminUserCreationForm):
     pass
