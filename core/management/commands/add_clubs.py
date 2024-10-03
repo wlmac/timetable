@@ -123,7 +123,8 @@ class Command(BaseCommand):
                         "extra_content": time_and_place + "\n\n" + social_links,
                         "show_members": True,
                         "is_active": True,
-                        "is_open": False,
+                        "is_open": True,
+                        "applications_open": True,
                     },
                 # fmt: on
 

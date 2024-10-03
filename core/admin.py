@@ -34,6 +34,7 @@ from .utils.actions import (
     reset_club_president,
     send_notif_singleday,
     send_test_notif,
+    set_club_open,
     set_club_active,
     set_club_unactive,
     set_post_archived,
@@ -156,6 +157,7 @@ class OrganizationAdmin(admin.ModelAdmin):
         OrganizationURLInline,
     ]
     actions = [
+        set_club_open,
         set_club_unactive,
         set_club_active,
         reset_club_president,
