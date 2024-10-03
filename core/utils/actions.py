@@ -13,6 +13,7 @@ from core.utils.announcements import request_announcement_approval
 from core.utils.ratelimiting import admin_action_rate_limit
 
 __all__ = [
+    "set_club_open",
     "set_club_unactive",
     "set_club_active",
     "reset_club_president",
@@ -41,6 +42,13 @@ def set_club_unactive(modeladmin, request, queryset: QuerySet[Organization]):
 )
 def set_club_active(modeladmin, request, queryset: QuerySet[Organization]):
     queryset.update(is_active=True)
+
+
+@admin.action(
+    permissions=["change"], description=__("Set the selected clubs to open membership")
+)
+def set_club_open(modeladmin, request, queryset: QuerySet[Organization]):
+    queryset.update(is_open=True, applications_open=True)
 
 
 @admin.action(

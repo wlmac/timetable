@@ -133,12 +133,15 @@ class Command(BaseCommand):
                         "extra_content": time_and_place + "\n\n" + social_links,
                         "show_members": True,
                         "is_active": True,
-                        "is_open": False,
+                        "is_open": True,
+                        "applications_open": True,
                     } # this singular comma gave me a run for my money. i have lost my family, my wealth, my sanity, and my soul from the inclusion of this character. 
                 # fmt: on
-                
+
                 # remove all non-alphanumeric or whitespace characters (a-z, A-Z, 0-9, space) and then replace spaces with dashes
-                slug = re.sub(r"[^a-zA-Z0-9\s]", "", organization_name.strip().casefold()).replace(" ", "-")
+                slug = re.sub(
+                    r"[^a-zA-Z0-9\s]", "", organization_name.strip().casefold()
+                ).replace(" ", "-")
 
                 if not Organization.objects.filter(slug=slug).exists():
                     slug = self.get_corrected_slug_or_not(organization_name, slug)
@@ -164,7 +167,7 @@ class Command(BaseCommand):
             except IntegrityError as IE:
                 self.error(IE.__traceback__)
             self.stdout.write()
-        
+
         self.warn(
             f"Skipped {len(skipped_orgs)} organizations: \n\t{'\n\t'.join(skipped_orgs)}"
         )
@@ -214,4 +217,3 @@ class Command(BaseCommand):
                 self.error(
                     f"\tCould not find an organization with the slug '{new_slug}'. Please try again or leave blank to create a club."
                 )
-    
