@@ -43,7 +43,7 @@ class Profile(LoginRequiredMixin, DetailView, mixins.TitleMixin):
 
 class ProfileUpdate(LoginRequiredMixin, UpdateView, mixins.TitleMixin):
     model = models.User
-    fields = ["bio", "first_name", "last_name", "graduating_year"]
+    fields = ["bio", "username", "first_name", "last_name", "graduating_year"]
     template_name = "core/profile/update.html"
     success_url = reverse_lazy("profile_redirect")
     title = "Update Profile"
