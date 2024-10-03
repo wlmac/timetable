@@ -628,16 +628,6 @@ class UserAdmin(DjangoUserAdmin):
     form = UserAdminForm
     add_form = UserCreationForm
 
-    add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": ("username", "password1", "password2"), # Removed usable_password field
-            },
-        ),
-    )
-
     def get_inline_instances(self, request, obj=None):
         if obj and StaffMember.objects.filter(user=obj).exists():
             # Add StaffMemberInline if the user has a related StaffMember
