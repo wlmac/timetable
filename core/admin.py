@@ -23,7 +23,7 @@ from .forms import (
     TagSuperuserAdminForm,
     TermAdminForm,
     UserAdminForm,
-    UserCreationForm,
+    UserCreationAdminForm,
 )
 from .models import Comment, StaffMember
 from .utils.actions import (
@@ -34,7 +34,6 @@ from .utils.actions import (
     reset_club_president,
     send_notif_singleday,
     send_test_notif,
-    set_club_open,
     set_club_active,
     set_club_unactive,
     set_post_archived,
@@ -157,7 +156,6 @@ class OrganizationAdmin(admin.ModelAdmin):
         OrganizationURLInline,
     ]
     actions = [
-        set_club_open,
         set_club_unactive,
         set_club_active,
         reset_club_president,
@@ -628,7 +626,7 @@ class UserAdmin(DjangoUserAdmin):
     ]
     actions = [send_test_notif, send_notif_singleday]
     form = UserAdminForm
-    add_form = UserCreationForm
+    add_form = UserCreationAdminForm
 
     def get_inline_instances(self, request, obj=None):
         if obj and StaffMember.objects.filter(user=obj).exists():
