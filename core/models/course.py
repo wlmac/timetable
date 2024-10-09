@@ -51,9 +51,9 @@ class Term(models.Model):
             "calendar_days": self.__day_num_calendar_days,
         }
         target_date = utils.get_localdate(date=target_date, time=[23, 59, 59])
-        if not self.is_current(target_date.date()) or not self.day_is_instructional(
-            target_date
-        ):
+        if (
+            not self.is_current(target_date.date()) or target_date.weekday() >= 5
+        ):  # TODO: check for pa days
             return None
         return methods[tf.get("day_num_method", "consecutive")](tf, target_date)
 
