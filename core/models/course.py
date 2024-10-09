@@ -3,9 +3,10 @@ from __future__ import annotations
 import datetime as dt
 
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from .. import utils
 
@@ -148,25 +149,25 @@ class Term(models.Model):
     class MisconfiguredTermError(Exception):
         pass
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if self.start_date > self.end_date:
-            raise self.MisconfiguredTermError("Start date must be before end date")
+            raise ValidationError(_("Start date must be before end date"))
 
         # check for overlapping terms
         for term in Term.objects.all():
             if term.id == self.id:
                 continue
 
-            if term.start_date <= self.start_date < term.end_date:
-                raise self.MisconfiguredTermError(
-                    "Current term's date range overlaps with existing term"
+            if (
+                term.start_date <= self.start_date < term.end_date
+                and term.start_date < self.end_date <= term.end_date
+            ):
+                raise ValidationError(
+                    _("Current term's date range overlaps with existing term")
                 )
 
-            if term.start_date < self.end_date <= term.end_date:
-                raise self.MisconfiguredTermError(
-                    "Current term's date range overlaps with existing term"
-                )
-
+    def save(self, *args, **kwargs):
+        self.clean()
         super().save(*args, **kwargs)
 
     @classmethod
@@ -251,6 +252,10 @@ class Event(models.Model):
             events = (events | events.filter(organization__member=user)).distinct()
 
         return events
+
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError(_("Start date must be before end date"))
 
     def save(self, *args, **kwargs):
         if not timezone.is_aware(self.end_date):
