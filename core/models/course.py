@@ -151,7 +151,12 @@ class Term(models.Model):
 
     def clean(self):
         if self.start_date > self.end_date:
-            raise ValidationError(_("Start date must be before end date"))
+            raise ValidationError(
+                {
+                    "start_date": _("Start date must be before end date"),
+                    "end_date": _("Start date must be before end date"),
+                }
+            )
 
         # check for overlapping terms
         for term in Term.objects.all():
@@ -163,7 +168,14 @@ class Term(models.Model):
                 and term.start_date < self.end_date <= term.end_date
             ):
                 raise ValidationError(
-                    _("Current term's date range overlaps with existing term")
+                    {
+                        "start_date": _(
+                            "Current term's date range overlaps with existing term"
+                        ),
+                        "end_date": _(
+                            "Current term's date range overlaps with existing term"
+                        ),
+                    }
                 )
 
     def save(self, *args, **kwargs):
@@ -227,11 +239,11 @@ class Event(models.Model):
     )
     is_public = models.BooleanField(
         default=True,
-        help_text="Whether if this event pertains to the general school population, not just those in the organization.",
+        help_text="Whether or not this event is viewable to the general school population, not just those in the organization.",
     )
     should_announce = models.BooleanField(
         default=False,
-        help_text="Whether if this event should be announced to the general school population VIA the important events feed.",
+        help_text="Whether or not this event should be announced to the general school population VIA the important events feed.",
     )
 
     tags = models.ManyToManyField(
@@ -255,7 +267,12 @@ class Event(models.Model):
 
     def clean(self):
         if self.start_date > self.end_date:
-            raise ValidationError(_("Start date must be before end date"))
+            raise ValidationError(
+                {
+                    "start_date": _("Start date must be before end date"),
+                    "end_date": _("Start date must be before end date"),
+                }
+            )
 
     def save(self, *args, **kwargs):
         if not timezone.is_aware(self.end_date):
@@ -268,6 +285,8 @@ class Event(models.Model):
             self.start_date = timezone.make_aware(
                 self.start_date, timezone.get_current_timezone()
             )
+
+        self.clean()
 
         schedule_formats = settings.TIMETABLE_FORMATS[self.term.timetable_format][
             "schedules"
