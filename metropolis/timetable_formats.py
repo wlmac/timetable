@@ -733,7 +733,7 @@ TIMETABLE_FORMATS: Final = {  # possible formats for timetables, position is the
                         "time": "02:00 pm - 03:15 pm",
                         "course": "Period 4",
                     },
-                    "time": [[14, 0], [15, 15]],
+                    "time": [[14, 0], [23, 15]],
                     "position": [{4, 6}, {3, 6}],
                 },
             ],

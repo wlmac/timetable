@@ -34,13 +34,14 @@ class Term(models.Model):
         return self.start_date <= target_date < self.end_date
 
     def day_is_instructional(self, target_date=None):
-        target_date = utils.get_localdate(date=target_date, time=[11, 0, 0])
+        target_date_start = utils.get_localdate(date=target_date, time=[0, 0, 0])
+        target_date_end = utils.get_localdate(date=target_date, time=[23, 59, 59])
         return (
             target_date.weekday() < 5
             and not self.events.filter(
                 is_instructional=False,
-                start_date__lte=target_date,
-                end_date__gte=target_date,
+                start_date__lt=target_date_end,
+                end_date__gt=target_date_start,
             ).exists()
         )
 
@@ -91,18 +92,16 @@ class Term(models.Model):
         return (len(cycle_day_type_set) - 1) % tf["cycle"]["length"] + 1
 
     def day_schedule_format(self, target_date=None):
-        tds = utils.get_localdate(date=target_date, time=[0, 0, 0])  # target date start
-        tde = utils.get_localdate(
-            date=target_date, time=[23, 59, 59]
-        )  # target date end
+        target_date_start = utils.get_localdate(date=target_date, time=[0, 0, 0])
+        target_date_end = utils.get_localdate(date=target_date, time=[23, 59, 59])
 
         schedule_formats = settings.TIMETABLE_FORMATS[self.timetable_format][
             "schedules"
         ]
         schedule_format_set = set(
-            self.events.filter(start_date__lte=tde, end_date__gte=tds).values_list(
-                "schedule_format", flat=True
-            )
+            self.events.filter(
+                start_date__lte=target_date_end, end_date__gte=target_date_start
+            ).values_list("schedule_format", flat=True)
         ).intersection(set(schedule_formats.keys()))
         for schedule_format in list(schedule_formats.keys())[::-1]:
             if schedule_format in schedule_format_set:
@@ -223,8 +222,7 @@ class Event(models.Model):
 
     schedule_format = models.CharField(max_length=64, default="default")
     is_instructional = models.BooleanField(
-        default=True,
-        help_text="Whether this event changes the day's schedule or not. Leave checked if not direct cause. (don't change for presentations, etc.)",
+        help_text="Whether or not school is running on this day. Automatically changes depending on the schedule format and should not be manually edited.",
     )
     is_public = models.BooleanField(
         default=True,
@@ -265,4 +263,11 @@ class Event(models.Model):
             self.start_date = timezone.make_aware(
                 self.start_date, timezone.get_current_timezone()
             )
+
+        schedule_formats = settings.TIMETABLE_FORMATS[self.term.timetable_format][
+            "schedules"
+        ]
+        self.is_instructional = len(schedule_formats[self.schedule_format]) > 0
+        # PA days and holidays do not have time data
+
         super().save(*args, **kwargs)
