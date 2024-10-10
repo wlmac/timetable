@@ -80,7 +80,6 @@ class Command(BaseCommand):
                     "term": options["term"] if options["term"] else None,
                     "organization": None,
                     "schedule_format": "default",
-                    "is_instructional": True,
                     "is_public": True,
                     "should_announce": False,
                 }
@@ -182,7 +181,7 @@ class Command(BaseCommand):
                     event_data["term"]
                 )
 
-                for key in ["is_instructional", "is_public", "should_announce"]:
+                for key in ["is_public", "should_announce"]:
                     event_data[key] = self._get_boolean(key, event_data[key])
 
                 event = Event(**event_data)

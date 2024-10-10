@@ -3,9 +3,10 @@ from __future__ import annotations
 import datetime as dt
 
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from .. import utils
 
@@ -34,13 +35,14 @@ class Term(models.Model):
         return self.start_date <= target_date < self.end_date
 
     def day_is_instructional(self, target_date=None):
-        target_date = utils.get_localdate(date=target_date, time=[11, 0, 0])
+        target_date_start = utils.get_localdate(date=target_date, time=[0, 0, 0])
+        target_date_end = utils.get_localdate(date=target_date, time=[23, 59, 59])
         return (
             target_date.weekday() < 5
             and not self.events.filter(
                 is_instructional=False,
-                start_date__lte=target_date,
-                end_date__gte=target_date,
+                start_date__lt=target_date_end,
+                end_date__gt=target_date_start,
             ).exists()
         )
 
@@ -51,9 +53,9 @@ class Term(models.Model):
             "calendar_days": self.__day_num_calendar_days,
         }
         target_date = utils.get_localdate(date=target_date, time=[23, 59, 59])
-        if (
-            not self.is_current(target_date.date()) or target_date.weekday() >= 5
-        ):  # TODO: check for pa days
+        if not self.is_current(target_date.date()) or not self.day_is_instructional(
+            target_date
+        ):
             return None
         return methods[tf.get("day_num_method", "consecutive")](tf, target_date)
 
@@ -91,18 +93,16 @@ class Term(models.Model):
         return (len(cycle_day_type_set) - 1) % tf["cycle"]["length"] + 1
 
     def day_schedule_format(self, target_date=None):
-        tds = utils.get_localdate(date=target_date, time=[0, 0, 0])  # target date start
-        tde = utils.get_localdate(
-            date=target_date, time=[23, 59, 59]
-        )  # target date end
+        target_date_start = utils.get_localdate(date=target_date, time=[0, 0, 0])
+        target_date_end = utils.get_localdate(date=target_date, time=[23, 59, 59])
 
         schedule_formats = settings.TIMETABLE_FORMATS[self.timetable_format][
             "schedules"
         ]
         schedule_format_set = set(
-            self.events.filter(start_date__lte=tde, end_date__gte=tds).values_list(
-                "schedule_format", flat=True
-            )
+            self.events.filter(
+                start_date__lte=target_date_end, end_date__gte=target_date_start
+            ).values_list("schedule_format", flat=True)
         ).intersection(set(schedule_formats.keys()))
         for schedule_format in list(schedule_formats.keys())[::-1]:
             if schedule_format in schedule_format_set:
@@ -149,25 +149,37 @@ class Term(models.Model):
     class MisconfiguredTermError(Exception):
         pass
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if self.start_date > self.end_date:
-            raise self.MisconfiguredTermError("Start date must be before end date")
+            raise ValidationError(
+                {
+                    "start_date": _("Start date must be before end date"),
+                    "end_date": _("Start date must be before end date"),
+                }
+            )
 
         # check for overlapping terms
         for term in Term.objects.all():
             if term.id == self.id:
                 continue
 
-            if term.start_date <= self.start_date < term.end_date:
-                raise self.MisconfiguredTermError(
-                    "Current term's date range overlaps with existing term"
+            if (
+                term.start_date <= self.start_date < term.end_date
+                and term.start_date < self.end_date <= term.end_date
+            ):
+                raise ValidationError(
+                    {
+                        "start_date": _(
+                            "Current term's date range overlaps with existing term"
+                        ),
+                        "end_date": _(
+                            "Current term's date range overlaps with existing term"
+                        ),
+                    }
                 )
 
-            if term.start_date < self.end_date <= term.end_date:
-                raise self.MisconfiguredTermError(
-                    "Current term's date range overlaps with existing term"
-                )
-
+    def save(self, *args, **kwargs):
+        self.clean()
         super().save(*args, **kwargs)
 
     @classmethod
@@ -223,16 +235,15 @@ class Event(models.Model):
 
     schedule_format = models.CharField(max_length=64, default="default")
     is_instructional = models.BooleanField(
-        default=True,
-        help_text="Whether this event changes the day's schedule or not. Leave checked if not direct cause. (don't change for presentations, etc.)",
+        help_text="Whether or not school is running on this day. Automatically changes depending on the schedule format and should not be manually edited.",
     )
     is_public = models.BooleanField(
         default=True,
-        help_text="Whether if this event pertains to the general school population, not just those in the organization.",
+        help_text="Whether or not this event is viewable to the general school population, not just those in the organization.",
     )
     should_announce = models.BooleanField(
         default=False,
-        help_text="Whether if this event should be announced to the general school population VIA the important events feed.",
+        help_text="Whether or not this event should be announced to the general school population VIA the important events feed.",
     )
 
     tags = models.ManyToManyField(
@@ -254,6 +265,15 @@ class Event(models.Model):
 
         return events
 
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError(
+                {
+                    "start_date": _("Start date must be before end date"),
+                    "end_date": _("Start date must be before end date"),
+                }
+            )
+
     def save(self, *args, **kwargs):
         if not timezone.is_aware(self.end_date):
             # Convert naive datetime to aware datetime
@@ -265,4 +285,13 @@ class Event(models.Model):
             self.start_date = timezone.make_aware(
                 self.start_date, timezone.get_current_timezone()
             )
+
+        self.clean()
+
+        schedule_formats = settings.TIMETABLE_FORMATS[self.term.timetable_format][
+            "schedules"
+        ]
+        self.is_instructional = len(schedule_formats[self.schedule_format]) > 0
+        # PA days and holidays do not have time data
+
         super().save(*args, **kwargs)

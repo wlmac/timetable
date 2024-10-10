@@ -43,7 +43,6 @@ def create_winter_break(school_org: Organization, term: Term):
         end_date=now + datetime.timedelta(days=10),
         organization=school_org,
         term=term,
-        is_instructional=False,
     )
     event.save()
 

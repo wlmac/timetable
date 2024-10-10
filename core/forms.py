@@ -216,6 +216,7 @@ class EventAdminForm(forms.ModelForm):
 
         self.fields["schedule_format"].initial = "default"
         self.fields["term"].initial = models.Term.get_current()
+        self.fields["is_instructional"].disabled = True
 
         if "instance" in kwargs and kwargs["instance"] is not None:
             instance = kwargs["instance"]

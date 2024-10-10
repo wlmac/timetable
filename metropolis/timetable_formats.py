@@ -839,6 +839,8 @@ TIMETABLE_FORMATS: Final = {  # possible formats for timetables, position is the
                     "position": [{4, 6}, {3, 6}],
                 },
             ],
+            "pa-day": [],
+            "holiday": [],
         },
         "courses": 4,
         "positions": {1, 2, 3, 4, 5, 6},
