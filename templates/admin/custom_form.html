@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    <script src="{% static "admin/js/core.js" %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+{% endblock %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}<div class="breadcrumbs" style="height:0px;padding:0px"></div>{% endblock %}
+{% endif %}
+
+{% block coltype %}colM{% endblock %}
+{% block content %}
+    <form action="{{ url }}" method="post">
+        {% csrf_token %}
+        <fieldset class="module aligned ">
+            {% for field in form %}
+                <div class="form-row field-name">
+                    {{ field.errors }}
+                    <div>
+                        <div class="flex-container">
+                            {{ field.label_tag }} {{ field }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <div class="submit-row">
+            <input class="default" type="submit" value="Save">
+        </div>
+    </form>
+{% endblock %}
