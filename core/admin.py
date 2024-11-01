@@ -586,10 +586,12 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
                 start_date = datetime.combine(start_date_value, time(hour=10))
                 end_date = datetime.combine(start_date_value, time(hour=10, second=1))
 
+                organization = form.cleaned_data.get('organization')
+
                 data = {
                     'name': 'Late Start',
                     'term': models.Term.get_current(start_date),
-                    'organization': models.Organization.objects.get(name='SAC'),
+                    'organization': organization,
                     'schedule_format': 'late-start',
                     'start_date': start_date,
                     'end_date': end_date

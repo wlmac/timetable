@@ -21,6 +21,15 @@
 {% block content %}
     <form action="{{ url }}" method="post">
         {% csrf_token %}
+        {% if form.errors %}
+            <p class="errornote">
+                {% if form.errors|length == 1 %}
+                    {% translate "Please correct the error below." %}
+                {% else %}
+                    {% translate "Please correct the errors below." %}
+                {% endif %}
+            </p>
+        {% endif %}
         <fieldset class="module aligned ">
             {% for field in form %}
                 <div class="form-row field-name">
