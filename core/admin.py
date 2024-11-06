@@ -557,7 +557,7 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
     list_filter = [OrganizationListFilter]
     ordering = ["-start_date", "-end_date"]
     search_fields = ["name"]
-    change_list_template = 'admin/change_list_custom_buttons.html'
+    change_list_template = 'admin/change_list_buttons.html'
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
