@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+{% block object-tools-items %}
+    {% for button in buttons %} 
+        <li>
+            <a href="{{ button.url }}" class="grp-state-focus addlink">{{ button.name }}</a>
+        </li>
+    {% endfor %}
+    {{ block.super }}
+{% endblock %}

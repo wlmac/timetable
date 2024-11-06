@@ -557,12 +557,24 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
     list_filter = [OrganizationListFilter]
     ordering = ["-start_date", "-end_date"]
     search_fields = ["name"]
+    change_list_template = 'admin/change_list_custom_buttons.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['buttons'] = [
+            {
+                'name': 'Add Late Start',
+                'url': reverse('admin:late_start'),
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
 
     def get_urls(self):  
         return [
             path(
                 "createLateStart/",
-                self.admin_site.admin_view(self.late_start_view)
+                self.admin_site.admin_view(self.late_start_view),
+                name="late_start"
             ),
             *super().get_urls(),
         ]
@@ -586,16 +598,33 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
                 start_date = datetime.combine(start_date_value, time(hour=10))
                 end_date = datetime.combine(start_date_value, time(hour=10, second=1))
 
-                organization = form.cleaned_data.get('organization')
-
                 data = {
                     'name': 'Late Start',
                     'term': models.Term.get_current(start_date),
-                    'organization': organization,
                     'schedule_format': 'late-start',
                     'start_date': start_date,
                     'end_date': end_date
                 }
+
+                try:
+                    data["organization"] = models.Organization.objects.get(name='SAC')
+                except models.Organization.DoesNotExist:
+
+                    earliest_superuser = models.User.objects.filter(is_superuser=True).earliest("date_joined")
+
+                    organization_data = {
+                        'bio': 'WLMAC Student Activity Council',
+                        'is_open': False,
+                        'name': 'SAC',
+                        'slug': 'wlmac',
+                        'owner': earliest_superuser
+                    }
+
+                    sac_org = models.Organization.objects.create(**organization_data)
+                    sac_org.execs.add(earliest_superuser)
+                    sac_org.save()
+
+                    data["organization"] = sac_org
 
                 models.Event.objects.create(**data)
                 return redirect("/admin/core/event")

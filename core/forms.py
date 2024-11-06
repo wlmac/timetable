@@ -300,19 +300,6 @@ class UserCreationAdminForm(CaseInsensitiveUsernameMixin, ContribAdminUserCreati
 
 class LateStartEventForm(forms.Form):
     start_date = forms.DateField(widget=AdminDateWidget())
-    organization = forms.ModelChoiceField(
-        queryset=models.Organization.objects.all(),
-        required=True
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(LateStartEventForm, self).__init__(*args, **kwargs)
-        
-        try:
-            self.fields["organization"].initial = models.Organization.objects.get(name='SAC')
-        except models.Organization.DoesNotExist:
-            pass 
-
 
     def clean(self):
         cleaned_data = super().clean()
