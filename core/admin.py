@@ -53,6 +53,7 @@ from django.template.response import TemplateResponse
 from django.shortcuts import redirect
 from django.urls import path
 from datetime import datetime, time
+from django.core.exceptions import PermissionDenied
 
 User = get_user_model()
 
@@ -580,6 +581,9 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
         ]
 
     def late_start_view(self, request):
+
+        if not request.user.has_perm('core.add_event'):
+            raise PermissionDenied()
         
         url = request.get_full_path()
         
@@ -609,6 +613,9 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
                 try:
                     data["organization"] = models.Organization.objects.get(name='SAC')
                 except models.Organization.DoesNotExist:
+
+                    if not request.user.has_perm('core.add_organization'):
+                        raise PermissionDenied()
 
                     earliest_superuser = models.User.objects.filter(is_superuser=True).earliest("date_joined")
 
