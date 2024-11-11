@@ -5,12 +5,14 @@ from django.contrib.auth.forms import UserChangeForm as ContribUserChangeForm
 from django.contrib.auth.forms import (
     AdminUserCreationForm as ContribAdminUserCreationForm,
 )
+from django.contrib.admin.widgets import AdminDateWidget
 from django.utils import timezone
 from django_select2 import forms as s2forms
 from martor.widgets import AdminMartorWidget
 
 from core import models
 from core.views.mixins import CaseInsensitiveUsernameMixin
+
 
 
 class MetropolisSignupForm(SignupForm, CaseInsensitiveUsernameMixin):
@@ -295,3 +297,13 @@ class UserAdminForm(CaseInsensitiveUsernameMixin, ContribUserChangeForm):
 
 class UserCreationAdminForm(CaseInsensitiveUsernameMixin, ContribAdminUserCreationForm):
     pass
+
+class LateStartEventForm(forms.Form):
+    start_date = forms.DateField(widget=AdminDateWidget())
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('start_date') != None and models.Term.get_current(cleaned_data['start_date']) == None:
+            raise forms.ValidationError(
+                {'start_date': 'No Term Found For Date'}
+            )

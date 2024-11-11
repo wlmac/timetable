@@ -24,6 +24,7 @@ from .forms import (
     TermAdminForm,
     UserAdminForm,
     UserCreationAdminForm,
+    LateStartEventForm
 )
 from .models import Comment, StaffMember
 from .utils.actions import (
@@ -47,6 +48,12 @@ from .utils.filters import (
     OrganizationListFilter,
     PostTypeFilter,
 )
+
+from django.template.response import TemplateResponse
+from django.shortcuts import redirect
+from django.urls import path
+from datetime import datetime, time
+from django.core.exceptions import PermissionDenied
 
 User = get_user_model()
 
@@ -546,12 +553,93 @@ class ExhibitAdmin(PostAdmin):
                 kwargs["queryset"] = models.Tag.objects.all().order_by("name")
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
-
 class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
     list_display = ["name", "organization", "start_date", "end_date"]
     list_filter = [OrganizationListFilter]
     ordering = ["-start_date", "-end_date"]
     search_fields = ["name"]
+    change_list_template = 'admin/change_list_buttons.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['buttons'] = [
+            {
+                'name': 'Add Late Start',
+                'url': reverse('admin:late_start'),
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def get_urls(self):  
+        return [
+            path(
+                "createLateStart/",
+                self.admin_site.admin_view(self.late_start_view),
+                name="late_start"
+            ),
+            *super().get_urls(),
+        ]
+
+    def late_start_view(self, request):
+
+        if not request.user.has_perm('core.add_event'):
+            raise PermissionDenied()
+        
+        url = request.get_full_path()
+        
+        context = dict(
+            self.admin_site.each_context(request),
+            form=LateStartEventForm,
+            url=url,
+            title='Add Late Start',
+            media=LateStartEventForm().media
+        )
+
+        if request.method == 'POST':
+            form = LateStartEventForm(request.POST)
+            if form.is_valid():
+                start_date_value = form.cleaned_data.get('start_date')
+                start_date = datetime.combine(start_date_value, time(hour=10))
+                end_date = datetime.combine(start_date_value, time(hour=10, second=1))
+
+                data = {
+                    'name': 'Late Start',
+                    'term': models.Term.get_current(start_date),
+                    'schedule_format': 'late-start',
+                    'start_date': start_date,
+                    'end_date': end_date
+                }
+
+                try:
+                    data["organization"] = models.Organization.objects.get(name='SAC')
+                except models.Organization.DoesNotExist:
+
+                    if not request.user.has_perm('core.add_organization'):
+                        raise PermissionDenied()
+
+                    earliest_superuser = models.User.objects.filter(is_superuser=True).earliest("date_joined")
+
+                    organization_data = {
+                        'bio': 'WLMAC Student Activity Council',
+                        'is_open': False,
+                        'name': 'SAC',
+                        'slug': 'wlmac',
+                        'owner': earliest_superuser
+                    }
+
+                    sac_org = models.Organization.objects.create(**organization_data)
+                    sac_org.execs.add(earliest_superuser)
+                    sac_org.save()
+
+                    data["organization"] = sac_org
+
+                models.Event.objects.create(**data)
+                return redirect("/admin/core/event")
+            else:
+                context['form'] = form 
+                return TemplateResponse(request, "admin/custom_form.html", context)
+        else:
+            return TemplateResponse(request, "admin/custom_form.html", context)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
