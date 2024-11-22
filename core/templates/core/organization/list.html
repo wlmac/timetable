@@ -8,23 +8,9 @@
 {% block main %}
     <div class="container">
         <div class="card-container">
-            <div class="legend">
-                <div class="legend-items">
-                    <div class="green-square"></div>
-                    <span>Open Membership</span>
-                </div>
-                <div class="legend-items">
-                    <div class="yellow-square"></div>
-                    <span>Accepting Applications</span>
-                </div>
-                <div class="legend-items">
-                    <div class="red-square"></div>
-                    <span>Closed Applications</span>
-                </div>
-            </div>
             <div class="cards">
                 {% for organization in organizations %}
-                    <div class="card {% if  organization.is_open %} green-status {% elif organization.applications_open %} yellow-status {% else %} red-status {% endif %}">
+                    <div class="card">
                         <div class="valign-wrapper">
                             <div class="club-logo">
                                 {% if organization.icon %}
