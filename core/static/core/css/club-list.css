@@ -1,27 +1,3 @@
-.red-square {
-    height: 20px;
-    width: 20px;
-    background-color: var(--status-red);
-    margin: 6px;
-    border-radius: 20%;
-}
-
-.green-square {
-    height: 20px;
-    width: 20px;
-    background-color: var(--status-green);
-    margin: 6px;
-    border-radius: 20%;
-}
-
-.yellow-square {
-    height: 20px;
-    width: 20px;
-    background-color: var(--status-yellow);
-    margin: 6px;
-    border-radius: 20%;
-}
-
 .message {
     width: 100%;
     margin-top: 30px;
@@ -34,23 +10,7 @@
     background-color: white;
     min-height: calc(100vh - 164px);
 }
-.legend {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-.legend-items {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-    margin-right: 1rem;
-}
+
 .cards {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -75,18 +35,6 @@ hr {
     margin: 20px 0 10px;
     border: 0px solid var(--light-grey);
     border-top-width: 2px;
-}
-
-.green-status{
-    border-left: 5px solid var(--status-green);
-}
-
-.red-status{
-    border-left: 5px solid var(--status-red);
-}
-
-.yellow-status{
-    border-left: 5px solid var(--status-yellow);
 }
 
 .title  {
