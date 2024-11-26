@@ -24,7 +24,7 @@ from .forms import (
     TermAdminForm,
     UserAdminForm,
     UserCreationAdminForm,
-    LateStartEventForm
+    LateStartEventForm,
 )
 from .models import Comment, StaffMember
 from .utils.actions import (
@@ -553,78 +553,79 @@ class ExhibitAdmin(PostAdmin):
                 kwargs["queryset"] = models.Tag.objects.all().order_by("name")
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
+
 class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
     list_display = ["name", "organization", "start_date", "end_date"]
     list_filter = [OrganizationListFilter]
     ordering = ["-start_date", "-end_date"]
     search_fields = ["name"]
-    change_list_template = 'admin/change_list_buttons.html'
+    change_list_template = "admin/change_list_buttons.html"
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        extra_context['buttons'] = [
+        extra_context["buttons"] = [
             {
-                'name': 'Add Late Start',
-                'url': reverse('admin:late_start'),
+                "name": "Add Late Start",
+                "url": reverse("admin:late_start"),
             },
         ]
         return super().changelist_view(request, extra_context=extra_context)
 
-    def get_urls(self):  
+    def get_urls(self):
         return [
             path(
                 "createLateStart/",
                 self.admin_site.admin_view(self.late_start_view),
-                name="late_start"
+                name="late_start",
             ),
             *super().get_urls(),
         ]
 
     def late_start_view(self, request):
-
-        if not request.user.has_perm('core.add_event'):
+        if not request.user.has_perm("core.add_event"):
             raise PermissionDenied()
-        
+
         url = request.get_full_path()
-        
+
         context = dict(
             self.admin_site.each_context(request),
             form=LateStartEventForm,
             url=url,
-            title='Add Late Start',
-            media=LateStartEventForm().media
+            title="Add Late Start",
+            media=LateStartEventForm().media,
         )
 
-        if request.method == 'POST':
+        if request.method == "POST":
             form = LateStartEventForm(request.POST)
             if form.is_valid():
-                start_date_value = form.cleaned_data.get('start_date')
+                start_date_value = form.cleaned_data.get("start_date")
                 start_date = datetime.combine(start_date_value, time(hour=10))
                 end_date = datetime.combine(start_date_value, time(hour=10, second=1))
 
                 data = {
-                    'name': 'Late Start',
-                    'term': models.Term.get_current(start_date),
-                    'schedule_format': 'late-start',
-                    'start_date': start_date,
-                    'end_date': end_date
+                    "name": "Late Start",
+                    "term": models.Term.get_current(start_date),
+                    "schedule_format": "late-start",
+                    "start_date": start_date,
+                    "end_date": end_date,
                 }
 
                 try:
-                    data["organization"] = models.Organization.objects.get(name='SAC')
+                    data["organization"] = models.Organization.objects.get(name="SAC")
                 except models.Organization.DoesNotExist:
-
-                    if not request.user.has_perm('core.add_organization'):
+                    if not request.user.has_perm("core.add_organization"):
                         raise PermissionDenied()
 
-                    earliest_superuser = models.User.objects.filter(is_superuser=True).earliest("date_joined")
+                    earliest_superuser = models.User.objects.filter(
+                        is_superuser=True
+                    ).earliest("date_joined")
 
                     organization_data = {
-                        'bio': 'WLMAC Student Activity Council',
-                        'is_open': False,
-                        'name': 'SAC',
-                        'slug': 'wlmac',
-                        'owner': earliest_superuser
+                        "bio": "WLMAC Student Activity Council",
+                        "is_open": False,
+                        "name": "SAC",
+                        "slug": "wlmac",
+                        "owner": earliest_superuser,
                     }
 
                     sac_org = models.Organization.objects.create(**organization_data)
@@ -636,7 +637,7 @@ class EventAdmin(CustomTimeMixin, admin.ModelAdmin):
                 models.Event.objects.create(**data)
                 return redirect("/admin/core/event")
             else:
-                context['form'] = form 
+                context["form"] = form
                 return TemplateResponse(request, "admin/custom_form.html", context)
         else:
             return TemplateResponse(request, "admin/custom_form.html", context)

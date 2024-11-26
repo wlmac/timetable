@@ -14,7 +14,6 @@ from core import models
 from core.views.mixins import CaseInsensitiveUsernameMixin
 
 
-
 class MetropolisSignupForm(SignupForm, CaseInsensitiveUsernameMixin):
     first_name = forms.CharField(
         max_length=30,
@@ -298,12 +297,14 @@ class UserAdminForm(CaseInsensitiveUsernameMixin, ContribUserChangeForm):
 class UserCreationAdminForm(CaseInsensitiveUsernameMixin, ContribAdminUserCreationForm):
     pass
 
+
 class LateStartEventForm(forms.Form):
     start_date = forms.DateField(widget=AdminDateWidget())
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get('start_date') != None and models.Term.get_current(cleaned_data['start_date']) == None:
-            raise forms.ValidationError(
-                {'start_date': 'No Term Found For Date'}
-            )
+        if (
+            cleaned_data.get("start_date") != None
+            and models.Term.get_current(cleaned_data["start_date"]) == None
+        ):
+            raise forms.ValidationError({"start_date": "No Term Found For Date"})
