@@ -304,7 +304,7 @@ class LateStartEventForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         if (
-            cleaned_data.get("start_date") != None
-            and models.Term.get_current(cleaned_data["start_date"]) == None
+            cleaned_data.get("start_date") is not None
+            and models.Term.get_current(cleaned_data["start_date"]) is None
         ):
             raise forms.ValidationError({"start_date": "No Term Found For Date"})
