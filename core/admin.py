@@ -25,6 +25,7 @@ from .forms import (
     UserAdminForm,
     UserCreationAdminForm,
     LateStartEventForm,
+    DailyAnnoucementAdminForm
 )
 from .models import Comment, StaffMember
 from .utils.actions import (
@@ -197,6 +198,14 @@ class OrganizationAdmin(admin.ModelAdmin):
                 kwargs["queryset"] = models.Tag.objects.all()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
+class DailyAnnoucementAdmin(admin.ModelAdmin):
+    list_display = ['organization', 'start_date', 'end_date']
+    list_filter = ['organization', 'start_date', 'end_date']
+    
+    def get_form(self, request, obj=None, **kwargs):
+        if request.user.is_superuser:
+            kwargs["form"] = DailyAnnoucementAdminForm
+        return super().get_form(request, obj, **kwargs)
 
 class PostAdmin(admin.ModelAdmin):
     readonly_fields = ["like_count", "save_count", "comments"]
@@ -800,6 +809,7 @@ admin.site.register(models.Timetable, TimetableAdmin)
 admin.site.register(models.Term, TermAdmin)
 admin.site.register(models.Course)
 admin.site.register(models.Organization, OrganizationAdmin)
+admin.site.register(models.DailyAnnoucement, DailyAnnoucementAdmin)
 admin.site.register(models.Announcement, AnnouncementAdmin)
 admin.site.register(models.BlogPost, BlogPostAdmin)
 admin.site.register(models.Exhibit, ExhibitAdmin)

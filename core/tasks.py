@@ -57,6 +57,8 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=1, minute=0), clear_expired
     )  # Delete expired oauth2 tokens from db everyday at 1am
 
+    sender.add_periodic_task(crontab(hour=8, minute=9, day_of_week="mon-fri"), fetch_annoucements)
+
 
 @app.task
 def delete_expired_users():
@@ -234,3 +236,7 @@ def notif_single(self, recipient_id: int, msg_kwargs):
         for token in notreg_tokens:
             del u.expo_notif_tokens[token]
         u.save()
+
+@app.task
+def fetch_annoucements():
+    pass 
