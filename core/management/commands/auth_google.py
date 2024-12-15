@@ -8,8 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        SECRETS_PATH = "E:\\Alex\\Coding\\metro_venv\\Workspace\\metro-fork\\secrets"
-        # SECRETS_PATH = settings.SECRETS_PATH
+        SECRETS_PATH = settings.SECRETS_PATH
 
         CLIENT_PATH = SECRETS_PATH + "\\client_secret.json"
         AUTHORIZED_PATH = SECRETS_PATH + "\\authorized_user.json"
