@@ -209,6 +209,11 @@ class DailyAnnoucement(models.Model):
     def get_todays_annoucements(cls) -> QuerySet:
         return cls.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now())
 
+    # TODO: Implement function  
+    @staticmethod
+    def validate_annoucement_date(start_date, end_date):
+        pass 
+
 class Post(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,

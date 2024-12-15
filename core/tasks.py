@@ -1,5 +1,7 @@
+import os 
 import datetime as dt
 import functools
+from pathlib import Path
 
 import pytz
 import requests
@@ -20,7 +22,11 @@ from exponent_server_sdk import (
 from oauth2_provider.models import clear_expired
 from requests.exceptions import ConnectionError, HTTPError
 
-from core.models import Announcement, BlogPost, Comment, Event, User
+import gspread 
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+
+from core.models import Announcement, BlogPost, Comment, Event, User, DailyAnnoucement
 from core.utils.tasks import get_random_username
 from metropolis.celery import app
 
@@ -239,4 +245,69 @@ def notif_single(self, recipient_id: int, msg_kwargs):
 
 @app.task
 def fetch_annoucements():
-    pass 
+    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
+        return 
+
+    CLIENT_PATH = settings.SECRETS_PATH + "\\client_secret.json"
+    AUTHORIZED_PATH = settings.SECRETS_PATH + "\\authorized_user.json"
+
+    if not Path.is_dir(settings.SECRETS_PATH):
+        logger.warning(f"Fetch Annoucements: {settings.SECRETS_PATH} directory does not exist")
+        return 
+    
+    if not Path.is_file(CLIENT_PATH):
+        logger.warning(f"Fetch Annoucements: {CLIENT_PATH} does not exist")
+        return 
+    
+    client = None 
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets.readonly'
+    ]
+
+    if Path.is_file(AUTHORIZED_PATH):
+        creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
+
+        if not creds.valid and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                client = gspread.authorize(creds)
+
+                with open(AUTHORIZED_PATH, "w") as f:
+                    f.write(creds.to_json())
+            except Exception as e:
+                logger.warning("Fetch Annoucements: Failed to refresh or authorize new credentials")
+                return 
+    else:
+        client = gspread.oauth(
+            credentials_filename=CLIENT_PATH,
+            authorized_user_filename=AUTHORIZED_PATH,
+            flow=gspread.auth.console_flow,
+            scopes=scopes,
+        )
+
+    worksheet = client.open(settings.GOOGLE_SHEET_KEY).sheet1 
+    row_counter = 2 
+
+    while True:
+        if worksheet.get(f"A{row_counter}")[0] == []:
+            break 
+        else:
+            try:
+                data = []
+                for value in worksheet.row_values(row_counter):
+                    data.append(value)
+
+                parsed_data = {
+                        "organization": data[5],
+                        "start_date": dt.datetime.strptime(data[6],'%m/%d/%Y'),
+                        "end_date": dt.datetime.strptime(data[7],'%m/%d/%Y'),
+                        "content": data[8] 
+                    }
+                
+                # TODO: Validate start and end date using function DailyAnnoucements.validate_annoucement_date()
+
+                DailyAnnoucement.objects.create(**parsed_data)
+            except:
+                logger.warning(f"Fetch Annoucements: Failed to read, parse or create object for row {row_counter}") 
+                
+            row_counter += 1  

@@ -201,6 +201,7 @@ class OrganizationAdmin(admin.ModelAdmin):
 class DailyAnnoucementAdmin(admin.ModelAdmin):
     list_display = ['organization', 'start_date', 'end_date']
     list_filter = ['organization', 'start_date', 'end_date']
+    ordering = ['start_date']
     
     def get_form(self, request, obj=None, **kwargs):
         if request.user.is_superuser:
