@@ -251,11 +251,11 @@ def fetch_annoucements():
     CLIENT_PATH = settings.SECRETS_PATH + "\\client_secret.json"
     AUTHORIZED_PATH = settings.SECRETS_PATH + "\\authorized_user.json"
 
-    if not Path.is_dir(settings.SECRETS_PATH):
+    if not Path(settings.SECRETS_PATH).is_dir():
         logger.warning(f"Fetch Annoucements: {settings.SECRETS_PATH} directory does not exist")
         return 
     
-    if not Path.is_file(CLIENT_PATH):
+    if not Path(CLIENT_PATH).is_file():
         logger.warning(f"Fetch Annoucements: {CLIENT_PATH} does not exist")
         return 
     
@@ -264,7 +264,7 @@ def fetch_annoucements():
         'https://www.googleapis.com/auth/spreadsheets.readonly'
     ]
 
-    if Path.is_file(AUTHORIZED_PATH):
+    if Path(AUTHORIZED_PATH).is_file():
         creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
 
         if not creds.valid and creds.expired and creds.refresh_token:
@@ -278,12 +278,8 @@ def fetch_annoucements():
                 logger.warning("Fetch Annoucements: Failed to refresh or authorize new credentials")
                 return 
     else:
-        client = gspread.oauth(
-            credentials_filename=CLIENT_PATH,
-            authorized_user_filename=AUTHORIZED_PATH,
-            flow=gspread.auth.console_flow,
-            scopes=scopes,
-        )
+        logger.warning("Fetch Annoucements: Please run auth_google command to authenticate google account")
+        return 
 
     worksheet = client.open(settings.GOOGLE_SHEET_KEY).sheet1 
     row_counter = 2 
