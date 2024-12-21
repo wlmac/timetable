@@ -63,7 +63,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=1, minute=0), clear_expired
     )  # Delete expired oauth2 tokens from db everyday at 1am
 
-    sender.add_periodic_task(crontab(hour=8, minute=9, day_of_week="mon-fri"), fetch_annoucements)
+    sender.add_periodic_task(crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_annoucements)
 
 
 @app.task
@@ -248,8 +248,8 @@ def fetch_annoucements():
     if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
         return 
 
-    CLIENT_PATH = settings.SECRETS_PATH + "\\client_secret.json"
-    AUTHORIZED_PATH = settings.SECRETS_PATH + "\\authorized_user.json"
+    CLIENT_PATH = settings.SECRETS_PATH + "/client_secret.json"
+    AUTHORIZED_PATH = settings.SECRETS_PATH + "/authorized_user.json"
 
     if not Path(settings.SECRETS_PATH).is_dir():
         logger.warning(f"Fetch Annoucements: {settings.SECRETS_PATH} directory does not exist")
@@ -260,28 +260,40 @@ def fetch_annoucements():
         return 
     
     client = None 
-    scopes = [
-        'https://www.googleapis.com/auth/spreadsheets.readonly'
-    ]
+    scopes = gspread.auth.READONLY_SCOPES
 
     if Path(AUTHORIZED_PATH).is_file():
         creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
 
         if not creds.valid and creds.expired and creds.refresh_token:
+
             try:
                 creds.refresh(Request())
-                client = gspread.authorize(creds)
-
-                with open(AUTHORIZED_PATH, "w") as f:
-                    f.write(creds.to_json())
             except Exception as e:
-                logger.warning("Fetch Annoucements: Failed to refresh or authorize new credentials")
-                return 
+                logger.warning("Fetch Annoucements: Failed to refresh credentials")
+                return
+
+            with open(AUTHORIZED_PATH, "w") as f:
+                f.write(creds.to_json())
+
+        try:
+            client = gspread.authorize(creds)
+        except Exception as e:
+            logger.warning("Fetch Annoucements: Failed to authorize credentials")
+            return
+
     else:
         logger.warning("Fetch Annoucements: Please run auth_google command to authenticate google account")
-        return 
+        return
 
-    worksheet = client.open(settings.GOOGLE_SHEET_KEY).sheet1 
+    worksheet = None 
+
+    try:
+        worksheet = client.open_by_key(settings.GOOGLE_SHEET_KEY).sheet1    
+    except Exception as e:
+        logger.warning("Fetch Annoucements: Failed to open google sheet")
+        return
+
     row_counter = 2 
 
     while True:
@@ -302,8 +314,8 @@ def fetch_annoucements():
                 
                 # TODO: Validate start and end date using function DailyAnnoucements.validate_annoucement_date()
 
-                DailyAnnoucement.objects.create(**parsed_data)
+                DailyAnnoucement.objects.get_or_create(**parsed_data)
             except:
                 logger.warning(f"Fetch Annoucements: Failed to read, parse or create object for row {row_counter}") 
                 
-            row_counter += 1  
+            row_counter += 1

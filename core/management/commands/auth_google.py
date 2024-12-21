@@ -10,12 +10,10 @@ class Command(BaseCommand):
 
         SECRETS_PATH = settings.SECRETS_PATH
 
-        CLIENT_PATH = SECRETS_PATH + "\\client_secret.json"
-        AUTHORIZED_PATH = SECRETS_PATH + "\\authorized_user.json"
+        CLIENT_PATH = SECRETS_PATH + "/client_secret.json"
+        AUTHORIZED_PATH = SECRETS_PATH + "/authorized_user.json"
 
-        scopes = [
-            'https://www.googleapis.com/auth/spreadsheets.readonly'
-        ]
+        scopes = gspread.auth.READONLY_SCOPES
 
         if not Path(settings.SECRETS_PATH).is_dir():
             raise CommandError(f"{SECRETS_PATH} directory does not exist")

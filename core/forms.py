@@ -275,14 +275,8 @@ class DailyAnnoucementAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        # Not sure if we need to enforce the maximum of 3 consecutive school days rule or not in the form 
-        # If we do, is there an internal method for checking whether a certain is a school day?
-
-        # start_date = cleaned_data.get("start_date")
-        # end_date = cleaned_data.get("end_date")
-
-        # if (start_date - end_date).days > 4:
-        #     raise forms.ValidationError({"end_date": "Annoucement can only be read up to a maximum of 3 consecutive school days"})
+        
+        # TODO: Validate start and end date using function DailyAnnoucements.validate_annoucement_date()
 
 class AnnouncementAdminForm(forms.ModelForm):
     status = forms.ChoiceField(
