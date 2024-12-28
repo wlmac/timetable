@@ -275,8 +275,11 @@ class DailyAnnoucementAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        
-        # TODO: Validate start and end date using function DailyAnnoucements.validate_annoucement_date()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date != None and end_date != None and start_date > end_date:
+            raise forms.ValidationError({"start_date": "Start date cannot be after end date"})
 
 class AnnouncementAdminForm(forms.ModelForm):
     status = forms.ChoiceField(

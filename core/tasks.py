@@ -243,35 +243,40 @@ def notif_single(self, recipient_id: int, msg_kwargs):
             del u.expo_notif_tokens[token]
         u.save()
 
-@app.task
-def fetch_annoucements():
-    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
-        return 
 
+def load_client() -> tuple[gspread.Client | None, str | None, bool]:
+    """
+    Returns a client from authorized_user.json file 
+
+    :returns: Tuple with the client, error message and 
+    whether the client secret file exists 
+    """
     CLIENT_PATH = settings.SECRETS_PATH + "/client_secret.json"
     AUTHORIZED_PATH = settings.SECRETS_PATH + "/authorized_user.json"
 
     if not Path(settings.SECRETS_PATH).is_dir():
-        logger.warning(f"Fetch Annoucements: {settings.SECRETS_PATH} directory does not exist")
-        return 
+        return (None, f"{settings.SECRETS_PATH} directory does not exist", False)
     
     if not Path(CLIENT_PATH).is_file():
-        logger.warning(f"Fetch Annoucements: {CLIENT_PATH} does not exist")
-        return 
+        return (None, f"{CLIENT_PATH} does not exist", False)
     
     client = None 
     scopes = gspread.auth.READONLY_SCOPES
 
     if Path(AUTHORIZED_PATH).is_file():
-        creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
+        creds = None 
+
+        try:
+            creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
+        except Exception as e:
+            return (None, "Failed to load credentials", True) 
 
         if not creds.valid and creds.expired and creds.refresh_token:
 
             try:
                 creds.refresh(Request())
             except Exception as e:
-                logger.warning("Fetch Annoucements: Failed to refresh credentials")
-                return
+                return (None, "Failed to refresh credentials", True)
 
             with open(AUTHORIZED_PATH, "w") as f:
                 f.write(creds.to_json())
@@ -279,13 +284,29 @@ def fetch_annoucements():
         try:
             client = gspread.authorize(creds)
         except Exception as e:
-            logger.warning("Fetch Annoucements: Failed to authorize credentials")
-            return
+            return (None, "Failed to authorize credentials", True)
+
+        return (client, None, False) 
 
     else:
-        logger.warning("Fetch Annoucements: Please run auth_google command to authenticate google account")
-        return
+        return (None, "No file to load client from", True) 
 
+@app.task
+def fetch_annoucements():
+    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
+        logger.warning(f"Fetch Annoucements: GOOGLE_SHEET_KEY is empty")
+        return 
+
+    client, error_msg, client_path_exists = load_client()
+
+    if error_msg != None:
+        if client_path_exists:
+            logger.warning(f"Fetch Annoucements: {error_msg} - Run auth_google to fix")
+        else:
+            logger.warning(f"Fetch Annoucements: {error_msg}")
+        
+        return 
+    
     worksheet = None 
 
     try:
@@ -312,8 +333,6 @@ def fetch_annoucements():
                         "content": data[8] 
                     }
                 
-                # TODO: Validate start and end date using function DailyAnnoucements.validate_annoucement_date()
-
                 DailyAnnoucement.objects.get_or_create(**parsed_data)
             except:
                 logger.warning(f"Fetch Annoucements: Failed to read, parse or create object for row {row_counter}") 

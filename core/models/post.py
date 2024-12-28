@@ -203,16 +203,11 @@ class DailyAnnoucement(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"{self.organization} Annoucement"
+        return self.content[:75]
 
     @classmethod
-    def get_todays_annoucements(cls) -> QuerySet:
+    def get_todays_annoucements(cls) -> QuerySet[Self]:
         return cls.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now())
-
-    # TODO: Implement function  
-    @staticmethod
-    def validate_annoucement_date(start_date, end_date):
-        pass 
 
 class Post(models.Model):
     author = models.ForeignKey(

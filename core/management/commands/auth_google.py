@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from core.tasks import load_client
 from pathlib import Path
 import gspread 
 
@@ -12,25 +13,34 @@ class Command(BaseCommand):
 
         CLIENT_PATH = SECRETS_PATH + "/client_secret.json"
         AUTHORIZED_PATH = SECRETS_PATH + "/authorized_user.json"
+            
+        client, error_msg, client_path_exists = load_client()
 
-        scopes = gspread.auth.READONLY_SCOPES
-
-        if not Path(settings.SECRETS_PATH).is_dir():
-            raise CommandError(f"{SECRETS_PATH} directory does not exist")
+        if error_msg != None:
+            if not client_path_exists:
+                raise CommandError(error_msg)
+            elif Path(AUTHORIZED_PATH).is_file():
+                user = input(f"Delete authorized_user.json located at {AUTHORIZED_PATH}? [Y/n] ")
+                if user.strip().lower() not in ["yes", "y", ""]:
+                    raise CommandError("Failed to authenticate")
+                
+                Path(AUTHORIZED_PATH).unlink()
         
-        if not Path(CLIENT_PATH).is_file():
-            raise CommandError(f"{CLIENT_PATH} file does not exist")
+            try:
+                scopes = gspread.auth.READONLY_SCOPES
+                
+                gspread.oauth(
+                    credentials_filename=CLIENT_PATH,
+                    authorized_user_filename=AUTHORIZED_PATH,
+                    scopes=scopes,
+                )
+            except Exception as e:
+                raise CommandError("Failed to authenticate")
+
+        self.stdout.write(
+            self.style.SUCCESS("Successfully authenticated")
+        )
+
+
         
-        try:
-            gspread.oauth(
-                credentials_filename=CLIENT_PATH,
-                authorized_user_filename=AUTHORIZED_PATH,
-                scopes=scopes,
-            )
 
-            self.stdout.write(
-                self.style.SUCCESS("Successfully authenticated")
-            )
-
-        except Exception as e:
-            raise CommandError("Failed to authenticate")
