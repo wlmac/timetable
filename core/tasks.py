@@ -1,5 +1,7 @@
+import os 
 import datetime as dt
 import functools
+from pathlib import Path
 
 import pytz
 import requests
@@ -20,7 +22,11 @@ from exponent_server_sdk import (
 from oauth2_provider.models import clear_expired
 from requests.exceptions import ConnectionError, HTTPError
 
-from core.models import Announcement, BlogPost, Comment, Event, User
+import gspread 
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+
+from core.models import Announcement, BlogPost, Comment, Event, User, DailyAnnoucement
 from core.utils.tasks import get_random_username
 from metropolis.celery import app
 
@@ -56,6 +62,8 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         crontab(hour=1, minute=0), clear_expired
     )  # Delete expired oauth2 tokens from db everyday at 1am
+
+    sender.add_periodic_task(crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_annoucements)
 
 
 @app.task
@@ -234,3 +242,99 @@ def notif_single(self, recipient_id: int, msg_kwargs):
         for token in notreg_tokens:
             del u.expo_notif_tokens[token]
         u.save()
+
+
+def load_client() -> tuple[gspread.Client | None, str | None, bool]:
+    """
+    Returns a client from authorized_user.json file 
+
+    :returns: Tuple with the client, error message and 
+    whether the client secret file exists 
+    """
+    CLIENT_PATH = settings.SECRETS_PATH + "/client_secret.json"
+    AUTHORIZED_PATH = settings.SECRETS_PATH + "/authorized_user.json"
+
+    if not Path(settings.SECRETS_PATH).is_dir():
+        return (None, f"{settings.SECRETS_PATH} directory does not exist", False)
+    
+    if not Path(CLIENT_PATH).is_file():
+        return (None, f"{CLIENT_PATH} does not exist", False)
+    
+    client = None 
+    scopes = gspread.auth.READONLY_SCOPES
+
+    if Path(AUTHORIZED_PATH).is_file():
+        creds = None 
+
+        try:
+            creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
+        except Exception as e:
+            return (None, "Failed to load credentials", True) 
+
+        if not creds.valid and creds.expired and creds.refresh_token:
+
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                return (None, "Failed to refresh credentials", True)
+
+            with open(AUTHORIZED_PATH, "w") as f:
+                f.write(creds.to_json())
+
+        try:
+            client = gspread.authorize(creds)
+        except Exception as e:
+            return (None, "Failed to authorize credentials", True)
+
+        return (client, None, False) 
+
+    else:
+        return (None, "No file to load client from", True) 
+
+@app.task
+def fetch_annoucements():
+    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
+        logger.warning(f"Fetch Annoucements: GOOGLE_SHEET_KEY is empty")
+        return 
+
+    client, error_msg, client_path_exists = load_client()
+
+    if error_msg != None:
+        if client_path_exists:
+            logger.warning(f"Fetch Annoucements: {error_msg} - Run auth_google to fix")
+        else:
+            logger.warning(f"Fetch Annoucements: {error_msg}")
+        
+        return 
+    
+    worksheet = None 
+
+    try:
+        worksheet = client.open_by_key(settings.GOOGLE_SHEET_KEY).sheet1    
+    except Exception as e:
+        logger.warning("Fetch Annoucements: Failed to open google sheet")
+        return
+
+    row_counter = 2 
+
+    while True:
+        if worksheet.get(f"A{row_counter}")[0] == []:
+            break 
+        else:
+            try:
+                data = []
+                for value in worksheet.row_values(row_counter):
+                    data.append(value)
+
+                parsed_data = {
+                        "organization": data[5],
+                        "start_date": dt.datetime.strptime(data[6],'%m/%d/%Y'),
+                        "end_date": dt.datetime.strptime(data[7],'%m/%d/%Y'),
+                        "content": data[8] 
+                    }
+                
+                DailyAnnoucement.objects.get_or_create(**parsed_data)
+            except:
+                logger.warning(f"Fetch Annoucements: Failed to read, parse or create object for row {row_counter}") 
+                
+            row_counter += 1

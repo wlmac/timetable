@@ -2,6 +2,11 @@ from datetime import datetime, timezone  # noqa: F401
 
 import sentry_sdk
 
+# Daily Annoucment 
+
+GOOGLE_SHEET_ID = ""
+SECRETS_PATH = ""
+
 # ruff: noqa: F821
 
 SECRET_KEY = "change me!"
