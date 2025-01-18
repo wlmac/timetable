@@ -327,7 +327,7 @@ def fetch_announcements():
             break 
 
         if row_counter == 1:
-            if data != data != ['Timestamp', 'Email Address', "Today's Date", 'Student Name (First and Last Name), if applicable.', 'Staff Advisor', 'Club', 'Start Date announcement is to be read (max. 3 consecutive school days).', 'End Date announcement is to be read', 'Announcement to be read (max 75 words)']:
+            if data != ['Timestamp', 'Email Address', "Today's Date", 'Student Name (First and Last Name), if applicable.', 'Staff Advisor', 'Club', 'Start Date announcement is to be read (max. 3 consecutive school days).', 'End Date announcement is to be read', 'Announcement to be read (max 75 words)']:
                 logger.warning("Fetch Announcements: Header row does not match")
                 break
         else:
