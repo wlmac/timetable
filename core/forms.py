@@ -271,7 +271,7 @@ class TagAdminForm(forms.ModelForm):
         fields = "__all__"
 
 
-class DailyAnnoucementAdminForm(forms.ModelForm):
+class DailyAnnouncementAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()

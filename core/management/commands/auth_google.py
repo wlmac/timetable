@@ -16,7 +16,7 @@ class Command(BaseCommand):
             
         client, error_msg, client_path_exists = load_client()
 
-        if error_msg != None:
+        if client == None:
             if not client_path_exists:
                 raise CommandError(error_msg)
             elif Path(AUTHORIZED_PATH).is_file():

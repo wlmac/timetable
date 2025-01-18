@@ -26,7 +26,7 @@ import gspread
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-from core.models import Announcement, BlogPost, Comment, Event, User, DailyAnnoucement
+from core.models import Announcement, BlogPost, Comment, Event, User, DailyAnnouncement
 from core.utils.tasks import get_random_username
 from metropolis.celery import app
 
@@ -63,7 +63,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=1, minute=0), clear_expired
     )  # Delete expired oauth2 tokens from db everyday at 1am
 
-    sender.add_periodic_task(crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_annoucements)
+    sender.add_periodic_task(crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_announcements)
 
 
 @app.task
@@ -286,24 +286,24 @@ def load_client() -> tuple[gspread.Client | None, str | None, bool]:
         except Exception as e:
             return (None, "Failed to authorize credentials", True)
 
-        return (client, None, False) 
+        return (client, None, True) 
 
     else:
         return (None, "No file to load client from", True) 
 
 @app.task
-def fetch_annoucements():
+def fetch_announcements():
     if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
-        logger.warning(f"Fetch Annoucements: GOOGLE_SHEET_KEY is empty")
+        logger.warning(f"Fetch Announcements: GOOGLE_SHEET_KEY is empty")
         return 
 
     client, error_msg, client_path_exists = load_client()
 
-    if error_msg != None:
+    if client == None:
         if client_path_exists:
-            logger.warning(f"Fetch Annoucements: {error_msg} - Run auth_google to fix")
+            logger.warning(f"Fetch Announcements: {error_msg} - Run auth_google to fix")
         else:
-            logger.warning(f"Fetch Annoucements: {error_msg}")
+            logger.warning(f"Fetch Announcements: {error_msg}")
         
         return 
     
@@ -312,29 +312,38 @@ def fetch_annoucements():
     try:
         worksheet = client.open_by_key(settings.GOOGLE_SHEET_KEY).sheet1    
     except Exception as e:
-        logger.warning("Fetch Annoucements: Failed to open google sheet")
+        logger.warning("Fetch Announcements: Failed to open google sheet")
         return
 
-    row_counter = 2 
-
+    row_counter = 1 
     while True:
-        if worksheet.get(f"A{row_counter}")[0] == []:
-            break 
-        else:
-            try:
-                data = []
-                for value in worksheet.row_values(row_counter):
-                    data.append(value)
 
-                parsed_data = {
-                        "organization": data[5],
-                        "start_date": dt.datetime.strptime(data[6],'%m/%d/%Y'),
-                        "end_date": dt.datetime.strptime(data[7],'%m/%d/%Y'),
-                        "content": data[8] 
-                    }
-                
-                DailyAnnoucement.objects.get_or_create(**parsed_data)
-            except:
-                logger.warning(f"Fetch Annoucements: Failed to read, parse or create object for row {row_counter}") 
-                
-            row_counter += 1
+        data = [] 
+
+        try:
+            data = [value.strip() for value in worksheet.row_values(row_counter)]
+        except:
+            logger.warning(f"Fetch Announcements: Failed to read row {row_counter}")
+            break 
+
+        if row_counter == 1:
+            if data != data != ['Timestamp', 'Email Address', "Today's Date", 'Student Name (First and Last Name), if applicable.', 'Staff Advisor', 'Club', 'Start Date announcement is to be read (max. 3 consecutive school days).', 'End Date announcement is to be read', 'Announcement to be read (max 75 words)']:
+                logger.warning("Fetch Announcements: Header row does not match")
+                break
+        else:
+            if data == []:
+                break
+            else:
+                try:
+                    parsed_data = {
+                            "organization": data[5],
+                            "start_date": dt.datetime.strptime(data[6],'%m/%d/%Y'),
+                            "end_date": dt.datetime.strptime(data[7],'%m/%d/%Y'),
+                            "content": data[8] 
+                        }
+
+                    DailyAnnouncement.objects.get_or_create(**parsed_data)
+                except:
+                    logger.warning(f"Fetch Announcements: Failed to parse or create object for row {row_counter}") 
+
+        row_counter += 1 
