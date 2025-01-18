@@ -293,13 +293,13 @@ def load_client() -> tuple[gspread.Client | None, str | None, bool]:
 
 @app.task
 def fetch_announcements():
-    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY == None:
+    if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY is None:
         logger.warning(f"Fetch Announcements: GOOGLE_SHEET_KEY is empty")
         return 
 
     client, error_msg, client_path_exists = load_client()
 
-    if client == None:
+    if client is None:
         if client_path_exists:
             logger.warning(f"Fetch Announcements: {error_msg} - Run auth_google to fix")
         else:
