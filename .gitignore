@@ -28,3 +28,6 @@ local_settings.py
 *.log
 
 *.pem
+
+# google secrets  
+secrets/*

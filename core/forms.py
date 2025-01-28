@@ -271,6 +271,16 @@ class TagAdminForm(forms.ModelForm):
         fields = "__all__"
 
 
+class DailyAnnouncementAdminForm(forms.ModelForm):
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date != None and end_date != None and start_date > end_date:
+            raise forms.ValidationError({"start_date": "Start date cannot be after end date"})
+
 class AnnouncementAdminForm(forms.ModelForm):
     status = forms.ChoiceField(
         widget=forms.Select(),

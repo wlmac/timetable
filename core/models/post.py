@@ -195,6 +195,19 @@ class Comment(PostInteraction):
         ]
         permissions = (("view_flagged", "View flagged comments"),)
 
+class DailyAnnouncement(models.Model):
+    organization = models.CharField(max_length=100)
+    content = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.content[:75]
+
+    @classmethod
+    def get_todays_announcements(cls) -> QuerySet[Self]:
+        return cls.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now())
 
 class Post(models.Model):
     author = models.ForeignKey(
