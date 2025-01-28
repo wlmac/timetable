@@ -1,4 +1,3 @@
-import os 
 import datetime as dt
 import functools
 from pathlib import Path
@@ -22,7 +21,7 @@ from exponent_server_sdk import (
 from oauth2_provider.models import clear_expired
 from requests.exceptions import ConnectionError, HTTPError
 
-import gspread 
+import gspread
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
@@ -63,7 +62,9 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=1, minute=0), clear_expired
     )  # Delete expired oauth2 tokens from db everyday at 1am
 
-    sender.add_periodic_task(crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_announcements)
+    sender.add_periodic_task(
+        crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_announcements
+    )
 
 
 @app.task
@@ -246,36 +247,35 @@ def notif_single(self, recipient_id: int, msg_kwargs):
 
 def load_client() -> tuple[gspread.Client | None, str | None, bool]:
     """
-    Returns a client from authorized_user.json file 
+    Returns a client from authorized_user.json file
 
-    :returns: Tuple with the client, error message and 
-    whether the client secret file exists 
+    :returns: Tuple with the client, error message and
+    whether the client secret file exists
     """
     CLIENT_PATH = settings.SECRETS_PATH + "/client_secret.json"
     AUTHORIZED_PATH = settings.SECRETS_PATH + "/authorized_user.json"
 
     if not Path(settings.SECRETS_PATH).is_dir():
         return (None, f"{settings.SECRETS_PATH} directory does not exist", False)
-    
+
     if not Path(CLIENT_PATH).is_file():
         return (None, f"{CLIENT_PATH} does not exist", False)
-    
-    client = None 
+
+    client = None
     scopes = gspread.auth.READONLY_SCOPES
 
     if Path(AUTHORIZED_PATH).is_file():
-        creds = None 
+        creds = None
 
         try:
             creds = Credentials.from_authorized_user_file(AUTHORIZED_PATH, scopes)
-        except Exception as e:
-            return (None, "Failed to load credentials", True) 
+        except Exception:
+            return (None, "Failed to load credentials", True)
 
         if not creds.valid and creds.expired and creds.refresh_token:
-
             try:
                 creds.refresh(Request())
-            except Exception as e:
+            except Exception:
                 return (None, "Failed to refresh credentials", True)
 
             with open(AUTHORIZED_PATH, "w") as f:
@@ -283,19 +283,20 @@ def load_client() -> tuple[gspread.Client | None, str | None, bool]:
 
         try:
             client = gspread.authorize(creds)
-        except Exception as e:
+        except Exception:
             return (None, "Failed to authorize credentials", True)
 
-        return (client, None, True) 
+        return (client, None, True)
 
     else:
-        return (None, "No file to load client from", True) 
+        return (None, "No file to load client from", True)
+
 
 @app.task
 def fetch_announcements():
     if settings.GOOGLE_SHEET_KEY == "" or settings.GOOGLE_SHEET_KEY is None:
-        logger.warning(f"Fetch Announcements: GOOGLE_SHEET_KEY is empty")
-        return 
+        logger.warning("Fetch Announcements: GOOGLE_SHEET_KEY is empty")
+        return
 
     client, error_msg, client_path_exists = load_client()
 
@@ -304,30 +305,39 @@ def fetch_announcements():
             logger.warning(f"Fetch Announcements: {error_msg} - Run auth_google to fix")
         else:
             logger.warning(f"Fetch Announcements: {error_msg}")
-        
-        return 
-    
-    worksheet = None 
+
+        return
+
+    worksheet = None
 
     try:
-        worksheet = client.open_by_key(settings.GOOGLE_SHEET_KEY).sheet1    
-    except Exception as e:
+        worksheet = client.open_by_key(settings.GOOGLE_SHEET_KEY).sheet1
+    except Exception:
         logger.warning("Fetch Announcements: Failed to open google sheet")
         return
 
-    row_counter = 1 
+    row_counter = 1
     while True:
-
-        data = [] 
+        data = []
 
         try:
             data = [value.strip() for value in worksheet.row_values(row_counter)]
-        except:
+        except Exception:
             logger.warning(f"Fetch Announcements: Failed to read row {row_counter}")
-            break 
+            break
 
         if row_counter == 1:
-            if data != ['Timestamp', 'Email Address', "Today's Date", 'Student Name (First and Last Name), if applicable.', 'Staff Advisor', 'Club', 'Start Date announcement is to be read (max. 3 consecutive school days).', 'End Date announcement is to be read', 'Announcement to be read (max 75 words)']:
+            if data != [
+                "Timestamp",
+                "Email Address",
+                "Today's Date",
+                "Student Name (First and Last Name), if applicable.",
+                "Staff Advisor",
+                "Club",
+                "Start Date announcement is to be read (max. 3 consecutive school days).",
+                "End Date announcement is to be read",
+                "Announcement to be read (max 75 words)",
+            ]:
                 logger.warning("Fetch Announcements: Header row does not match")
                 break
         else:
@@ -336,14 +346,16 @@ def fetch_announcements():
             else:
                 try:
                     parsed_data = {
-                            "organization": data[5],
-                            "start_date": dt.datetime.strptime(data[6],'%m/%d/%Y'),
-                            "end_date": dt.datetime.strptime(data[7],'%m/%d/%Y'),
-                            "content": data[8] 
-                        }
+                        "organization": data[5],
+                        "start_date": dt.datetime.strptime(data[6], "%m/%d/%Y"),
+                        "end_date": dt.datetime.strptime(data[7], "%m/%d/%Y"),
+                        "content": data[8],
+                    }
 
                     DailyAnnouncement.objects.get_or_create(**parsed_data)
-                except:
-                    logger.warning(f"Fetch Announcements: Failed to parse or create object for row {row_counter}") 
+                except Exception:
+                    logger.warning(
+                        f"Fetch Announcements: Failed to parse or create object for row {row_counter}"
+                    )
 
-        row_counter += 1 
+        row_counter += 1

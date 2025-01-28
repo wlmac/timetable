@@ -2,7 +2,7 @@ from datetime import datetime, timezone  # noqa: F401
 
 import sentry_sdk
 
-# Daily Announcements 
+# Daily Announcements
 
 GOOGLE_SHEET_ID = ""
 SECRETS_PATH = ""
