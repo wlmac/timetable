@@ -14,9 +14,7 @@ DEBUG = True
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # to emails just get printed to the console.
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".ngrok.io", ".ngrok-free.app"]
 
-# If you need to change the calendar address (see add_events.py management command), follow the instructions here:
-# https://web.archive.org/web/20240902165230/https://cdn.discordapp.com/attachments/1280208592712241285/1280208610848407714/instructions.png?ex=66d73ead&is=66d5ed2d&hm=8f1e5943cad6f4869d7d83737d5d171d8512b5a67b2b3818271a0e84e9e02125&
-SECRET_GCAL_ADDRESS = "Change me"
+GCAL_API_KEY = "Change me"
 
 if DEBUG:
     import mimetypes

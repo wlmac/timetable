@@ -25,7 +25,16 @@ import gspread
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-from core.models import Announcement, BlogPost, Comment, Event, User, DailyAnnouncement
+from core.models import (
+    Announcement,
+    BlogPost,
+    Comment,
+    Event,
+    Term,
+    User,
+    Organization,
+    DailyAnnouncement,
+)
 from core.utils.tasks import get_random_username
 from metropolis.celery import app
 
@@ -64,6 +73,10 @@ def setup_periodic_tasks(sender, **kwargs):
 
     sender.add_periodic_task(
         crontab(hour=8, minute=0, day_of_week="mon-fri"), fetch_announcements
+    )
+
+    sender.add_periodic_task(
+        crontab(hour=4, minute=0, day_of_week="mon-fri"), fetch_calendar_events
     )
 
 
@@ -359,3 +372,93 @@ def fetch_announcements():
                     )
 
         row_counter += 1
+
+
+@app.task
+def fetch_calendar_events():
+    try:
+        url = f"https://www.googleapis.com/calendar/v3/calendars/{"wlmacci@gmail.com"}/events"
+        url += "?fields=items(etag,id,status,summary,description,start,end)"
+        params = {
+            "key": settings.GCAL_API_KEY,
+            "orderBy": "startTime",
+            "timeMin": dt.datetime.now(dt.UTC).isoformat(),
+            "timeMax": (dt.datetime.now(dt.UTC) + dt.timedelta(days=150)).isoformat(),
+            "eventTypes": "default",
+            "singleEvents": "True",
+            "showDeleted": "True",
+        }
+
+        response = requests.get(url, params=params)
+
+        if response.status_code != 200:
+            raise Exception(
+                f"{str(response.status_code)} - Failed to fetch calendar events"
+            )
+
+        gcal_eventlist = response.json().get("items", [])
+
+    except Exception:
+        logger.warning(
+            "core.tasks.fetch_calendar_events: Failed to fetch Google Calendar event data"
+        )
+        return
+
+    for gcal_event in gcal_eventlist:
+        if gcal_event.get("summary").strip().lower() in ["day 1", "day 2"]:
+            continue
+
+        try:
+            event = Event.objects.filter(gcal_id=gcal_event.get("id")).first()
+            status = gcal_event.get("status")
+
+            if event is not None and (status is None or status == "cancelled"):
+                event.delete()
+
+            elif status == "confirmed":
+                summary = gcal_event.get("summary").strip().lower()
+
+                if summary == "p.a. day":
+                    schedule_format = "pa-day"
+                elif "late start" in summary:
+                    schedule_format = "late-start"
+                elif "holiday" in summary:
+                    schedule_format = "holiday"
+                else:
+                    schedule_format = "default"
+
+                start_date = timezone.make_aware(
+                    dt.datetime.combine(
+                        dt.date.fromisoformat(gcal_event.get("start").get("date")),
+                        dt.time(10),
+                    )
+                )
+                end_date = timezone.make_aware(
+                    dt.datetime.combine(
+                        dt.date.fromisoformat(gcal_event.get("end").get("date"))
+                        + dt.timedelta(days=-1),
+                        dt.time(10, 1),
+                    )
+                )
+
+                event_data = {
+                    "name": gcal_event.get("summary"),
+                    "organization": Organization.objects.get(slug="wlmac"),
+                    "term": Term.get_current(start_date),
+                    "description": gcal_event.get("description") or "",
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "schedule_format": schedule_format,
+                    "is_public": True,
+                    "gcal_etag": gcal_event.get("etag"),
+                }
+
+                Event.objects.update_or_create(
+                    gcal_id=gcal_event.get("id"),
+                    defaults=event_data,
+                )
+
+        except Exception:
+            logger.warning(
+                f"core.tasks.fetch_calendar_events: Failed to parse Google Calendar event data for event {gcal_event.get("summary")}"
+            )
