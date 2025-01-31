@@ -378,7 +378,7 @@ def fetch_announcements():
 def fetch_calendar_events():
     try:
         url = f"https://www.googleapis.com/calendar/v3/calendars/{"wlmacci@gmail.com"}/events"
-        url += "?fields=items(etag,id,status,summary,description,start,end)"
+        url += "?fields=items(id,status,summary,description,start,end)"
         params = {
             "key": settings.GCAL_API_KEY,
             "orderBy": "startTime",
@@ -450,10 +450,9 @@ def fetch_calendar_events():
                     "end_date": end_date,
                     "schedule_format": schedule_format,
                     "is_public": True,
-                    "gcal_etag": gcal_event.get("etag"),
                 }
 
-                Event.objects.update_or_create(
+                Event.objects.get_or_create(
                     gcal_id=gcal_event.get("id"),
                     defaults=event_data,
                 )

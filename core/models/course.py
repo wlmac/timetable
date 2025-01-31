@@ -256,11 +256,6 @@ class Event(models.Model):
         null=True,
         unique=True,
     )
-    gcal_etag = models.CharField(
-        max_length=64,
-        default=None,
-        null=True,
-    )
 
     def __str__(self):
         return self.name
