@@ -255,6 +255,7 @@ class Event(models.Model):
         default=None,
         null=True,
         unique=True,
+        editable=False,
         help_text="Unique identifier for events that are automatically created using data from the official WLMAC calendar. Should not be manually edited.",
     )
 

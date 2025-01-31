@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='event',
             name='gcal_id',
-            field=models.CharField(default=None, max_length=1024, null=True, unique=True),
+            field=models.CharField(default=None, editable=False, help_text='Unique identifier for events that are automatically created using data from the official WLMAC calendar. Should not be manually edited.', max_length=1024, null=True, unique=True),
         ),
     ]
