@@ -25,6 +25,9 @@ import gspread
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
+from google import genai
+from json import dumps, loads
+
 from core.models import (
     Announcement,
     BlogPost,
@@ -34,6 +37,7 @@ from core.models import (
     User,
     Organization,
     DailyAnnouncement,
+    Tag,
 )
 from core.utils.tasks import get_random_username
 from metropolis.celery import app
@@ -372,6 +376,105 @@ def fetch_announcements():
                     )
 
         row_counter += 1
+
+
+def gemini_set_time(events):
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    model = "models/gemini-1.5-flash"
+    data_for_llm = []
+
+    for event in events:
+        data_for_llm.append(
+            {"event": event.name, "description": event.description, "id": event.gcal_id}
+        )
+
+    prompt = f"You are a meticulous and organized secretary at a Toronto high school. Your job is to accurately set the start and ending time for events based on the information in the title or description of the event. Accuracy and consistency are paramount. You will be provided an array of events below. Each element in the array will contain the data for one event. The element will be in the format of a json object containing the name, description of the event as well as a id to identify the event. All day will be referring to the entire school day (9:00 to 15:15). Holidays, P.A days, late starts and similar events will last all day. Period 1 (P1) lasts from 9:00 to 10:20. Period 2 (P2) lasts from 10:25 to 11:40. Period 3 (P3) lasts from 12:40 to 13:55. Period 4 (P4) lasts from 14:00 to 15:15. The latest that any event finish at is 18:00 unless directly specified in the event. When outputting, output a single json object. The keys of the json object will match an id of an event that needs to have their time set and the value will be an array with two values, the starting and ending time. Use 24h hour format for time. If the event title and description does not provide enough information to determine the starting or ending time, set both to be null. Do not output anything besides the tags. \nEvents: {dumps(data_for_llm)}"
+
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+        )
+
+        response = response.text.replace("```json", "").replace("```", "")
+
+        response = loads(response)
+
+        for event in events:
+            start_time = response[event.gcal_id][0]
+            end_time = response[event.gcal_id][1]
+
+            if start_time is not None:
+                start_time = dt.datetime.strptime(start_time, "%H:%M")
+                event.start_date = event.start_date.replace(
+                    hour=start_time.hour, minute=start_time.minute
+                )
+            if end_time is not None:
+                end_time = dt.datetime.strptime(end_time, "%H:%M")
+                event.end_date = event.end_date.replace(
+                    hour=end_time.hour, minute=end_time.minute
+                )
+
+            event.save()
+
+    except Exception:
+        return "Failed to set time for events"
+
+
+def gemini_tag(events):
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    model = "models/gemini-1.5-flash"
+
+    past_events = Event.objects.filter(end_date__lte=timezone.now())[:100]
+
+    data_for_llm = {
+        "past_events": [],
+        "available_tags": [tag.name for tag in Tag.objects.all()],
+        "new_events": [],
+    }
+
+    for past_event in past_events:
+        tags = [tag.name for tag in past_event.tags.all()]
+        name = past_event.name
+        description = past_event.description
+
+        data_for_llm["past_events"].append(
+            {
+                "event": name,
+                "description": description,
+                "tags": tags,
+            }
+        )
+
+    for event in events:
+        data_for_llm["new_events"].append(
+            {"event": event.name, "description": event.description, "id": event.gcal_id}
+        )
+
+    prompt = f"You are a meticulous and organized secretary at a Toronto high school. Your job is to accurately categorize digital calendar events by placing tags on them.  Accuracy and consistency are paramount. You will be provided an array of events below to be tagged. Each element in the array will contain the data for one event. The element will be in the format of a json object containing the name, description of the event as well as a id to identify the event. The available tags for tagging the events will be provided below to you in the format of an array (E.g ['tag 1', 'tag 2', 'tag 3', ... ]). You are only allowed to use the provided tags to tag the events. {"" if data_for_llm["past_events"] == [] else "To help with your job, you will be provided below with an array of past events that have already be properly tagged. Each element of the array will be in the format of a json object, containing the name, description and tags for the event. You can reference past events to help guide your decision process in tagging the new events. "}When outputting, output a single json object. The keys of the json object will match an id of an event that needed tagging and the value will be an array of all the tags relevant. Do not output anything besides the tags.\n\nAvailable Tags: {data_for_llm["available_tags"]}\n{"" if data_for_llm["past_events"] == [] else "Past events: " + dumps(data_for_llm["past_events"])}\nEvents to be tagged: {dumps(data_for_llm["new_events"])}"
+
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+        )
+
+        response = response.text.replace("```json", "").replace("```", "")
+        response = loads(response)
+
+        tags = {}
+
+        for event in events:
+            for tag in response[event.gcal_id]:
+                if tag not in tags:
+                    tags[tag] = Tag.objects.get(name=tag)
+
+                event.tags.add(tags[tag])
+
+            event.save()
+
+    except Exception:
+        return "Failed to tag events"
 
 
 @app.task

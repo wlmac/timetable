@@ -16,6 +16,8 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".ngrok.io", ".ngrok-free.app"]
 
 GCAL_API_KEY = "Change me"
 
+GEMINI_API_KEY = "Change me"
+
 if DEBUG:
     import mimetypes
     import socket  # only if you haven't already imported this
