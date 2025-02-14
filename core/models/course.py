@@ -250,6 +250,15 @@ class Event(models.Model):
         "Tag", blank=True, related_name="events", related_query_name="event"
     )
 
+    gcal_id = models.CharField(
+        max_length=1024,
+        default=None,
+        null=True,
+        unique=True,
+        editable=False,
+        help_text="Unique identifier for events that are automatically created using data from the official WLMAC calendar. Should not be manually edited.",
+    )
+
     def __str__(self):
         return self.name
 

@@ -31,3 +31,6 @@ local_settings.py
 
 # google secrets  
 secrets/*
+
+# media
+media
